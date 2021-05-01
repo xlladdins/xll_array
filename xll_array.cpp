@@ -54,15 +54,14 @@ HANDLEX WINAPI xll_array_set(const _FPX* pa, WORD c)
 AddIn xai_array_resize(
 	Function(XLL_FPX, "xll_array_resize", "ARRAY.RESIZE")
 	.Arguments({
-		Arg(XLL_FPX, "handle", "is a handle to an array."),
+		Arg(XLL_FPX, "array", "is an array or handle to an array."),
 		Arg(XLL_LONG, "rows", "is the number of rows."),
 		Arg(XLL_LONG, "columns", "is the number of columns."),
 		})
-		.FunctionHelp("Resize an in-memory array.")
+		.FunctionHelp("Resize an array.")
 	.Category(CATEGORY)
 	.Documentation(R"(
-Resize <code>rows</code> and <code>columns</code> of an in-memory array
-given its <code>handle</code>
+Resize array to <code>rows</code> and <code>columns</code>.
 )")
 );
 _FPX* WINAPI xll_array_resize(_FPX* h, LONG r, LONG c)
@@ -99,8 +98,7 @@ AddIn xai_array_rows(
 		.FunctionHelp("Return the number of rows of an array.")
 	.Category(CATEGORY)
 	.Documentation(R"(
-Return the number of rows of an in-memory array
-given its <code>handle</code>.
+Return the number of rows of an array.
 )")
 );
 LONG WINAPI xll_array_rows(_FPX* pa)
@@ -121,7 +119,7 @@ LONG WINAPI xll_array_rows(_FPX* pa)
 		XLL_ERROR(ex.what());
 	}
 	catch (...) {
-		XLL_ERROR(__FUNCTION__ ": unknown exception");
+		XLL_ERROR("ARRAY.ROWS: unknown exception");
 	}
 
 	return r;
@@ -135,7 +133,7 @@ AddIn xai_array_columns(
 		.FunctionHelp("Return the number of columns of an in-memory array.")
 	.Category(CATEGORY)
 	.Documentation(R"(
-Return the number of columns of an in-memory array
+Return the number of columns of an array
 given its <code>handle</code>.
 )")
 );
@@ -157,7 +155,43 @@ LONG WINAPI xll_array_columns(_FPX* pa)
 		XLL_ERROR(ex.what());
 	}
 	catch (...) {
-		XLL_ERROR(__FUNCTION__ ": unknown exception");
+		XLL_ERROR("ARRAY.COLUMNS: unknown exception");
+	}
+
+	return c;
+}
+
+AddIn xai_array_size(
+	Function(XLL_LONG, "xll_array_size", "ARRAY.SIZE")
+	.Arguments({
+		Arg(XLL_FPX, "array", "is an array or handle to an array."),
+		})
+		.FunctionHelp("Return the size of an array.")
+	.Category(CATEGORY)
+	.Documentation(R"(
+Return the number of size of an in-memory array
+given its <code>handle</code>.
+)")
+);
+LONG WINAPI xll_array_size(_FPX* pa)
+{
+#pragma XLLEXPORT
+	LONG c = 0;
+
+	try {
+		FPX* a = ptr(pa);
+		if (a) {
+			c = a->size();
+		}
+		else {
+			c = size(*pa);
+		}
+	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
+	}
+	catch (...) {
+		XLL_ERROR("ARRAY.SIZE: unknown exception");
 	}
 
 	return c;
@@ -166,7 +200,8 @@ LONG WINAPI xll_array_columns(_FPX* pa)
 AddIn xai_array_get(
 	Function(XLL_FP, "xll_array_get", "ARRAY.GET")
 	.Arguments({
-		Arg(XLL_HANDLE, "handle", "is a handle to an array of numbers.")
+		Arg(XLL_HANDLE, "handle", "is a handle to an array of numbers."),
+		Arg(XLL_BOOL, "_fast", "is an option boolean to specify fast lookup.")
 		})
 	.FunctionHelp("Return an array associated with handle.")
 	.Category(CATEGORY)
@@ -175,13 +210,13 @@ Retrieve an in-memory array created by
 <a href=\"ARRAY.SET.html\">\ARRAY.SET</a>.
 )")
 );
-_FPX* WINAPI xll_array_get(HANDLEX h)
+_FPX* WINAPI xll_array_get(HANDLEX h, BOOL fast)
 {
 #pragma XLLEXPORT
 	_FPX* pa = nullptr;
 
 	try {
-		handle<FPX> h_(h);
+		handle<FPX> h_(h, !fast);
 		if (h_) {
 			pa = h_->get();
 		}
@@ -238,3 +273,36 @@ _FPX* WINAPI xll_array_sequence(double start, double stop, double incr)
 	return a.get();
 }
 
+#ifdef _DEBUG
+
+int test_array()
+{
+	{
+		_FPX a = { .rows = 1, .columns = 1 };
+		HANDLEX h = xll_array_set(&a, 0);
+		_FPX* pa = xll_array_get(h, TRUE);
+		ensure(pa);
+		ensure(pa->rows == 1);
+		ensure(pa->columns == 1);
+	}
+	{
+		_FPX a = { .rows = 1, .columns = 1 };
+		a.array[0] = 2;
+		HANDLEX h = xll_array_set(&a, 3);
+		_FPX* pa = xll_array_get(h, TRUE);
+		ensure(pa);
+		ensure(xll_array_rows(pa) == 2);
+		ensure(xll_array_columns(pa) == 3);
+	}
+
+	return TRUE;
+}
+Auto<OpenAfter> xaoa_test_array([]() {
+	int test;
+	test = test_array();
+
+	return test;
+
+	});
+
+#endif // _DEBUG
