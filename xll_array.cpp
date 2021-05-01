@@ -64,21 +64,15 @@ AddIn xai_array_resize(
 Resize array to <code>rows</code> and <code>columns</code>.
 )")
 );
-_FPX* WINAPI xll_array_resize(_FPX* h, LONG r, LONG c)
+_FPX* WINAPI xll_array_resize(const _FPX* pa, LONG r, LONG c)
 {
 #pragma XLLEXPORT
 	static FPX a;
 
 	try {
-		a = *h;
-
-		FPX* ph = ptr(h);
-		if (ph) {
-			ph->resize(r, c);
-		}
-		else {
-			a.resize(r, c);
-		}
+		a = *pa;
+		FPX* _a = ptr(&a);
+		_a->resize(r, c);
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
@@ -231,6 +225,37 @@ _FPX* WINAPI xll_array_get(HANDLEX h, BOOL fast)
 	return pa;
 }
 
+AddIn xai_array_take(
+	Function(XLL_FPX, "xll_array_take", "ARRAY.TAKE")
+	.Arguments({
+		Arg(XLL_LONG, "n", "is then number of items to take."),
+		Arg(XLL_FPX, "array", "is an array or handle to an array."),
+		})
+		.FunctionHelp("Take items from front (n > 0) or back (n < 0) of array.")
+	.Category(CATEGORY)
+	.Documentation(R"()")
+);
+_FPX* WINAPI xll_array_take(LONG n, _FPX* pa)
+{
+#pragma XLLEXPORT
+	static FPX a;
+
+	try {
+		a = *pa;
+		FPX* _a = ptr(&a);
+		array_take(n, _a->get());
+		_a->resize(_a->rows(), _a->columns());
+	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
+	}
+	catch (...) {
+		XLL_ERROR("ARRAY.SIZE: unknown exception");
+	}
+
+	return a.get();
+}
+
 AddIn xai_array_sequence(
 	Function(XLL_FP, "xll_array_sequence", "ARRAY.SEQUENCE")
 	.Arguments({
@@ -275,6 +300,8 @@ _FPX* WINAPI xll_array_sequence(double start, double stop, double incr)
 
 #ifdef _DEBUG
 
+
+
 int test_array()
 {
 	{
@@ -293,15 +320,33 @@ int test_array()
 		ensure(pa);
 		ensure(xll_array_rows(pa) == 2);
 		ensure(xll_array_columns(pa) == 3);
+		ensure(xll_array_size(pa) == 6);
 	}
 
 	return TRUE;
 }
-Auto<OpenAfter> xaoa_test_array([]() {
-	int test;
-	test = test_array();
+int test_take()
+{
+	{
+		FPX a = *xll_array_sequence(1, 10, 1);
+		ensure(xll_array_take(0, a.get()) == nullptr);
+		ensure(xll_array_take(5, a.get())->rows == 5);
+		ensure(xll_array_take(5, a.get())->array[0] == 1);
+		ensure(xll_array_take(-5, a.get())->rows == 5);
+		ensure(xll_array_take(-5, a.get())->array[0] == 6);
+		ensure(xll_array_take(100, a.get())->rows == 10);
+		ensure(xll_array_take(-100, a.get())->rows == 10);
+	}
 
-	return test;
+	return TRUE;
+}
+
+Auto<OpenAfter> xaoa_test_array([]() {
+	//_crtBreakAlloc = 2089;
+	return TRUE
+		&& test_array()
+		&& test_take()
+		;
 
 	});
 
