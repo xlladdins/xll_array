@@ -22,6 +22,9 @@ AddIn xai_array_set(
 	.Category(CATEGORY)
 	.Documentation(R"(
 Create an in-memory two-dimensional array of numbers to be used by array functions.
+If <code>array</code> is a scalar and <code>_columns</code> is not zero then
+return a handle to an uninitialized array having <code>array</code> rows
+and <code>_columns</code> columns.
 )")
 );
 HANDLEX WINAPI xll_array_set(const _FPX* pa, WORD c)
@@ -32,7 +35,7 @@ HANDLEX WINAPI xll_array_set(const _FPX* pa, WORD c)
 	try {
 		if (c != 0) {
 			ensure(size(*pa) == 1 || !"\\ARRAY: first argument must be scalar if second argument is not zero");
-			handle<FPX> h_(new FPX(static_cast<WORD>(pa->array[0]), c));
+			handle<FPX> h_(new FPX(static_cast<unsigned>(pa->array[0]), c));
 			ensure(h_);
 			h = h_.get();
 		}
@@ -195,7 +198,7 @@ AddIn xai_array_get(
 	Function(XLL_FP, "xll_array_get", "ARRAY.GET")
 	.Arguments({
 		Arg(XLL_HANDLE, "handle", "is a handle to an array of numbers."),
-		Arg(XLL_BOOL, "_fast", "is an option boolean to specify fast lookup.")
+		Arg(XLL_BOOL, "_fast", "is an option boolean to specify fast lookup. Default is FALSE.")
 		})
 	.FunctionHelp("Return an array associated with handle.")
 	.Category(CATEGORY)
@@ -233,7 +236,9 @@ AddIn xai_array_take(
 		})
 		.FunctionHelp("Take items from front (n > 0) or back (n < 0) of array.")
 	.Category(CATEGORY)
-	.Documentation(R"()")
+	.Documentation(R"(
+If <code>array</code> has more than one column then take <code>n</code> rows.
+)")
 );
 _FPX* WINAPI xll_array_take(LONG n, _FPX* pa)
 {
@@ -250,7 +255,7 @@ _FPX* WINAPI xll_array_take(LONG n, _FPX* pa)
 		XLL_ERROR(ex.what());
 	}
 	catch (...) {
-		XLL_ERROR("ARRAY.SIZE: unknown exception");
+		XLL_ERROR("ARRAY.TAKE: unknown exception");
 	}
 
 	return a.get();
@@ -300,7 +305,106 @@ _FPX* WINAPI xll_array_sequence(double start, double stop, double incr)
 
 #ifdef _DEBUG
 
+AddIn xai_array_sort(
+	Function(XLL_FP, "xll_array_sort", "ARRAY.SORT")
+	.Arguments({
+		Arg(XLL_FP, "array", "is an array to sort"),
+		Arg(XLL_LONG, "_count", "is an optional number of elements to partial sort. Default is 0."),
+		})
+		.FunctionHelp("Sort _count elements of array in increasing (_count >= 0) or decreasing (n < 0) order.")
+	.Category(CATEGORY)
+	.Documentation(R"xyzyx(
+Sort all elements of <code>array</code> in increasing numerical order when <code>_count = 0</code>. If
+<code>_count = -1</code> sort in decreasing order. If <code>_count > 0</code> only sort
+the smallest <code>_count</code> values. If <code>_count < -1</code> only sort
+the largest <code>_count</code> values.
+)xyzyx")
+);
+_FPX* WINAPI xll_array_sort(_FPX* pa, LONG n)
+{
+#pragma XLLEXPORT
+	if (n == 0) {
+		n = size(*pa);
+		std::sort(begin(*pa), end(*pa));
+	}
+	else if (n > 0) {
+		if (static_cast<unsigned>(n) > size(*pa)) {
+			n = size(*pa);
+		}
+		std::partial_sort(begin(*pa), begin(*pa) + n, end(*pa));
+	}
+	else if (n == -1) {
+		n = size(*pa);
+		std::sort(begin(*pa), end(*pa), std::greater<double>{});
+	}
+	else {
+		if (static_cast<unsigned>(-n) > size(*pa)) {
+			n = size(*pa);
+			n = -n;
+		}
+		std::partial_sort(begin(*pa), begin(*pa) - n, end(*pa), std::greater<double>{});
+	}
 
+	if (pa->rows == 1) {
+		pa->columns = abs(n);
+	}
+	else if (pa->columns == 1) {
+		pa->rows = abs(n);
+	}
+	else {
+		double inf = std::numeric_limits<double>::infinity();
+		if (n < 0) {
+			inf = -inf;
+		}
+		n = abs(n);
+		pa->rows = n / pa->columns; // might truncate
+		auto m = n % pa->columns;
+		if (m != 0) {
+			// pad
+			++pa->rows;
+			for (int i = 0; i < pa->columns - m; ++i) {
+				pa->array[n + i] = inf;
+			}
+		}
+	}
+
+	return pa;
+}
+
+AddIn xai_array_unique(
+	Function(XLL_FP, "xll_array_unique", "ARRAY.UNIQUE")
+	.Arguments({
+		Arg(XLL_FP, "array", "is an array to unique"),
+		})
+		.FunctionHelp("Remove consecutive duplicates from array.")
+	.Category(CATEGORY)
+	.Documentation(R"xyzyx(
+<code>ARRAY.UNIQUE</code> calls the STL function 
+<a href="https://en.cppreference.com/w/cpp/algorithm/unique"<code>std::unique</code></a>
+on <code>array</code>. Just like <code>std::unique</code>, the array must be sorted
+to guarantee all duplicate entries are removed.
+)xyzyx")
+	.SeeAlso({"ARRAY.SORT"})
+);
+_FPX* WINAPI xll_array_unique(_FPX* pa)
+{
+#pragma XLLEXPORT
+	auto e = std::unique(begin(*pa), end(*pa));
+
+	unsigned n = static_cast<unsigned>(e - begin(*pa));
+
+	if (pa->rows == 1) {
+		pa->columns = n;
+	}
+	else if (pa->columns == 1) {
+		pa->rows = n;
+	}
+	else {
+		pa->rows = 1 * (n % pa->columns) + n / pa->columns; // don't truncate
+	}
+
+	return pa;
+}
 
 int test_array()
 {
