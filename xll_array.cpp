@@ -358,11 +358,11 @@ _FPX* WINAPI xll_array_sort(_FPX* pa, LONG n)
 		}
 		n = abs(n);
 		pa->rows = n / pa->columns; // might truncate
-		auto m = n % pa->columns;
+		unsigned m = n % pa->columns;
 		if (m != 0) {
 			// pad
 			++pa->rows;
-			for (int i = 0; i < pa->columns - m; ++i) {
+			for (unsigned i = 0; i < pa->columns - m; ++i) {
 				pa->array[n + i] = inf;
 			}
 		}
@@ -400,7 +400,16 @@ _FPX* WINAPI xll_array_unique(_FPX* pa)
 		pa->rows = n;
 	}
 	else {
-		pa->rows = 1 * (n % pa->columns) + n / pa->columns; // don't truncate
+		double nan = std::numeric_limits<double>::quiet_NaN();
+		pa->rows = n / pa->columns; // might truncate
+		unsigned m = n % pa->columns;
+		if (m != 0) {
+			// pad
+			++pa->rows;
+			for (unsigned i = 0; i < pa->columns - m; ++i) {
+				pa->array[n + i] = nan;
+			}
+		}
 	}
 
 	return pa;
