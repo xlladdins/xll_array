@@ -78,4 +78,36 @@ namespace xll {
 		return pa;
 	}
 
+	// mask elements
+	inline _FPX* array_mask(_FPX* pm, _FPX* pa)
+	{
+		unsigned j = 0;
+
+		for (unsigned i = 0; i < size(*pa); ++i) {
+			if (index(*pm, i) != 0) {
+				pa->array[j] = pa->array[i];
+				++j;
+			}
+		}
+
+		if (pa->rows == 1) {
+			pa->columns = j;
+		}
+		else if (pa->columns == 1) {
+			pa->rows = j;
+		}
+		else {
+			pa->rows = j / pa->columns;
+			unsigned m = j % pa->columns;
+			if (m != 0) {
+				++pa->rows;
+				for (unsigned i = 0; i < pa->columns - m; ++i) {
+					pa->array[j + i] = std::numeric_limits<double>::quiet_NaN();
+				}
+			}
+		}
+
+		return pa;
+	}
+
 }

@@ -261,6 +261,42 @@ _FPX* WINAPI xll_array_take(LONG n, _FPX* pa)
 	return a.get();
 }
 
+// array.drop
+
+AddIn xai_array_mask(
+	Function(XLL_FPX, "xll_array_mask", "ARRAY.MASK")
+	.Arguments({
+		Arg(XLL_FPX, "mask", "is a mask to apply to array."),
+		Arg(XLL_FPX, "array", "is an array or handle to an array."),
+		})
+		.FunctionHelp("Return array values where corresponding mask is non-zero.")
+	.Category(CATEGORY)
+	.Documentation(R"(
+If <code>mask</code> is smaller than <code>array</code> then it is
+applied using cyclic indices.
+)")
+);
+_FPX* WINAPI xll_array_mask(_FPX* pm, _FPX* pa)
+{
+#pragma XLLEXPORT
+	static FPX a;
+
+	try {
+		a = *pa;
+		FPX* _a = ptr(&a);
+		array_mask(pm, _a->get());
+		_a->resize(_a->rows(), _a->columns());
+	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
+	}
+	catch (...) {
+		XLL_ERROR("ARRAY.TAKE: unknown exception");
+	}
+
+	return a.get();
+}
+
 AddIn xai_array_sequence(
 	Function(XLL_FP, "xll_array_sequence", "ARRAY.SEQUENCE")
 	.Arguments({
