@@ -10,7 +10,6 @@
 
 using namespace xll;
 
-
 AddIn xai_array_set(
 	Function(XLL_HANDLE, "xll_array_set", "\\ARRAY")
 	.Arguments({
@@ -127,11 +126,10 @@ AddIn xai_array_columns(
 	.Arguments({
 		Arg(XLL_FPX, "array", "is an array or handle to an array."),
 		})
-		.FunctionHelp("Return the number of columns of an in-memory array.")
+		.FunctionHelp("Return the number of columns of an array.")
 	.Category(CATEGORY)
 	.Documentation(R"(
-Return the number of columns of an array
-given its <code>handle</code>.
+Return the number of columns of an array.
 )")
 );
 LONG WINAPI xll_array_columns(_FPX* pa)
@@ -166,8 +164,7 @@ AddIn xai_array_size(
 		.FunctionHelp("Return the size of an array.")
 	.Category(CATEGORY)
 	.Documentation(R"(
-Return the number of size of an in-memory array
-given its <code>handle</code>.
+Return the number of rows times the number of columns of an array.
 )")
 );
 LONG WINAPI xll_array_size(_FPX* pa)
@@ -204,8 +201,10 @@ AddIn xai_array_get(
 	.Category(CATEGORY)
 	.Documentation(R"(
 Retrieve an in-memory array created by
-<a href=\"ARRAY.SET.html\">\ARRAY.SET</a>.
+<code>\ARRAY</code>. By default the handle is checked to
+ensure the array was created by a previous call to <code>\ARRAY</code>.
 )")
+	.SeeAlso({"\\ARRAY"})
 );
 _FPX* WINAPI xll_array_get(HANDLEX h, BOOL fast)
 {
@@ -237,6 +236,7 @@ AddIn xai_array_take(
 		.FunctionHelp("Take items from front (n > 0) or back (n < 0) of array.")
 	.Category(CATEGORY)
 	.Documentation(R"(
+Take items from front (n > 0) or back (n < 0) of array
 If <code>array</code> has more than one column then take <code>n</code> rows.
 )")
 );
@@ -262,6 +262,94 @@ _FPX* WINAPI xll_array_take(LONG n, _FPX* pa)
 }
 
 // array.drop
+
+AddIn xai_array_join(
+	Function(XLL_FP, "xll_array_join", "ARRAY.JOIN")
+	.Arguments({
+		Arg(XLL_FP, "array1", "is an array or handle to an array."),
+		Arg(XLL_FP, "array2", "is an array."),
+		})
+		.FunctionHelp("Return the concatenation of two arrays.")
+	.Category(CATEGORY)
+	.Documentation(R"(
+Join two arrays. 
+The shape of the returned array is determined by the shape of the first array.
+If the first array is a single column then so is the result. If the first
+array is a single row then so is the result.
+If the first array has more than one row the resulting array has the same
+number of columns. If the size of the second array 
+is not a multiple of the number of columns of the first array then
+the last partial row is omitted.
+<p>
+If <code>array1</code> is a handle then the associated in-memory
+array is modified and its handle is returned. If <code>array2</code> is a handle and
+<code>array2</code> is not, then the in-memory array is modified and
+the handle for the second array is returned.
+If <code>array1</code> is a handle then <code>array2</code> is appended.
+If <code>array2</code> is a handle and <code>array1</code> is not then
+<code>array1</code> is prepended. In this case the shape of the result
+is determined by the second array as described above.
+)")
+);
+_FPX* WINAPI xll_array_join(_FPX* pa1, _FPX* pa2)
+{
+#pragma XLLEXPORT
+	static xll::FPX a;
+
+	try {
+		// second array not a handle
+		if (ptr(pa1) != nullptr or ptr(pa2) == nullptr) {
+			a = *pa1; // copy either handle or array
+			FPX* pa = ptr(&a);
+			unsigned n = pa->size();
+			const _FPX& a2 = *_ptr(pa2);
+
+			// prefer columns
+			if (pa->columns() == 1) {
+				pa->resize(n + size(a2), 1);
+			}
+			else if (pa->rows() == 1) {
+				pa->resize(1, n + size(a2));
+			}
+			else {
+				pa->resize((n + size(a2)) / pa->columns(), pa->columns());
+			}
+
+			std::copy(begin(a2), begin(a2) + pa->size() - n, pa->begin() + n);
+		}
+		else {
+			// pa1 is not a handle and pa2 is
+			a = *pa2;
+			FPX* pa = ptr(&a);
+			unsigned n = pa->size();
+			const _FPX& a1 = *_ptr(pa1);
+
+			// prefer columns
+			if (pa->columns() == 1) {
+				pa->resize(size(a1) + n, 1);
+			}
+			else if (pa->rows() == 1) {
+				pa->resize(1, size(a1) + n);
+			}
+			else {
+				pa->resize((size(a1) + n) / pa->columns(), pa->columns());
+			}
+
+			auto i = std::copy_backward(pa->begin(), pa->begin() + n, pa->end());
+			std::copy(begin(a1), begin(a1) + (i - pa->begin()), pa->begin());
+		}
+
+	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
+	}
+	catch (...) {
+		XLL_ERROR("ARRAY.JOIN: unknown exception");
+	}
+
+	return a.get();
+}
+
 
 AddIn xai_array_mask(
 	Function(XLL_FPX, "xll_array_mask", "ARRAY.MASK")

@@ -15,6 +15,13 @@ namespace xll {
 
 		return h ? h.ptr() : nullptr;
 	}
+	// pointer to underlying _FPX
+	inline _FPX* _ptr(_FPX* pa)
+	{
+		FPX* _a = ptr(pa);
+
+		return _a ? _a->get() : pa;
+	}
 	// pointer to either FP or handle
 	inline FPX* ptr(FPX* pa)
 	{
