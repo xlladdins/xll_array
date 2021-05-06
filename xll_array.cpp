@@ -452,14 +452,28 @@ _FPX* WINAPI xll_array_join(_FPX* pa1, _FPX* pa2)
 int test_array_join()
 {
 	{
-		FPX a = *xll_array_sequence(1, 10, 1);
-		ensure(xll_array_take(0, a.get()) == nullptr);
-		ensure(xll_array_take(5, a.get())->rows == 5);
-		ensure(xll_array_take(5, a.get())->array[0] == 1);
-		ensure(xll_array_take(-5, a.get())->rows == 5);
-		ensure(xll_array_take(-5, a.get())->array[0] == 6);
-		ensure(xll_array_take(100, a.get())->rows == 10);
-		ensure(xll_array_take(-100, a.get())->rows == 10);
+		FPX b = *xll_array_sequence(1, 10, 1);
+		_FPX r = { .rows = 1, .columns = 1 };
+		r.array[0] = 2;
+		WORD c = 3;
+		r.array[0] = xll_array_set(&r, c);
+		_FPX* pab = xll_array_join(&r, b.get());
+		ensure(pab->rows == 1 + b.size());
+		ensure(pab->columns == 1);
+		ensure(pab->array[0] == r.array[0]);
+		ensure(pab->array[1] == b[0]);
+	}
+	{
+		FPX b = *xll_array_sequence(1, 10, 1);
+		_FPX r = { .rows = 1, .columns = 1 };
+		r.array[0] = 2;
+		WORD c = 3;
+		r.array[0] = xll_array_set(&r, c);
+		_FPX* pab = xll_array_join(b.get(), &r);
+		ensure(pab->rows == 1 + b.size());
+		ensure(pab->columns == 1);
+		ensure(pab->array[10] == r.array[0]);
+		ensure(pab->array[0] == b[0]);
 	}
 
 	return TRUE;
@@ -631,6 +645,7 @@ Auto<OpenAfter> xaoa_test_array([]() {
 	try {
 		test_array();
 		test_array_take();
+		test_array_join();
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
