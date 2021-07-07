@@ -194,7 +194,7 @@ LONG WINAPI xll_array_size(_FPX* pa)
 }
 
 AddIn xai_array_get(
-	Function(XLL_FP, "xll_array_get", "ARRAY.GET")
+	Function(XLL_FP, "xll_array_get", "ARRAY")
 	.Arguments({
 		Arg(XLL_HANDLE, "handle", "is a handle to an array of numbers."),
 		Arg(XLL_BOOL, "_fast", "is an option boolean to specify fast lookup. Default is FALSE.")
@@ -223,7 +223,7 @@ _FPX* WINAPI xll_array_get(HANDLEX h, BOOL fast)
 		XLL_ERROR(ex.what());
 	}
 	catch (...) {
-		XLL_ERROR("ARRAY.GET: unknown exception");
+		XLL_ERROR("ARRAY: unknown exception");
 	}
 
 	return pa;
