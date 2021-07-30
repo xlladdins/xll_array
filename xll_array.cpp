@@ -10,8 +10,8 @@
 
 using namespace xll;
 
-AddIn xai_array_set(
-	Function(XLL_HANDLE, "xll_array_set", "\\ARRAY")
+AddIn xai_array_(
+	Function(XLL_HANDLE, "xll_array_", "\\ARRAY")
 	.Arguments({
 		Arg(XLL_FP, "array", "is an array of numbers."),
 		Arg(XLL_WORD, "_columns", "is an optional number of columns. Default is 0."),
@@ -26,7 +26,7 @@ return a handle to an uninitialized array having <code>array</code> rows
 and <code>_columns</code> columns.
 )")
 );
-HANDLEX WINAPI xll_array_set(const _FPX* pa, WORD c)
+HANDLEX WINAPI xll_array_(const _FPX* pa, WORD c)
 {
 #pragma XLLEXPORT
 	HANDLEX h = INVALID_HANDLEX;
@@ -53,6 +53,42 @@ HANDLEX WINAPI xll_array_set(const _FPX* pa, WORD c)
 	return h;
 }
 
+AddIn xai_array_get(
+	Function(XLL_FP, "xll_array_get", "ARRAY")
+	.Arguments({
+		Arg(XLL_HANDLE, "handle", "is a handle to an array of numbers."),
+		Arg(XLL_BOOL, "_fast", "is an option boolean to specify fast lookup. Default is FALSE.")
+		})
+	.FunctionHelp("Return an array associated with handle.")
+	.Category(CATEGORY)
+	.Documentation(R"(
+Retrieve an in-memory array created by
+<code>\ARRAY</code>. By default the handle is checked to
+ensure the array was created by a previous call to <code>\ARRAY</code>.
+)")
+.SeeAlso({ "\\ARRAY" })
+);
+_FPX* WINAPI xll_array_get(HANDLEX h, BOOL fast)
+{
+#pragma XLLEXPORT
+	_FPX* pa = nullptr;
+
+	try {
+		handle<FPX> h_(h, !fast);
+		if (h_) {
+			pa = h_->get();
+		}
+	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
+	}
+	catch (...) {
+		XLL_ERROR(__FUNCTION__ ": unknown exception");
+	}
+
+	return pa;
+}
+
 AddIn xai_array_resize(
 	Function(XLL_FPX, "xll_array_resize", "ARRAY.RESIZE")
 	.Arguments({
@@ -66,15 +102,20 @@ AddIn xai_array_resize(
 Resize array to <code>rows</code> and <code>columns</code>.
 )")
 );
-_FPX* WINAPI xll_array_resize(const _FPX* pa, LONG r, LONG c)
+_FPX* WINAPI xll_array_resize(_FPX* pa, LONG r, LONG c)
 {
 #pragma XLLEXPORT
 	static FPX a;
 
 	try {
 		a = *pa;
-		FPX* _a = ptr(&a);
-		_a->resize(r, c);
+		FPX* _a = ptr(pa);
+		if (_a) {
+			_a->resize(r, c);
+		}
+		else {
+			a.resize(r,c);
+		}
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
@@ -103,9 +144,9 @@ LONG WINAPI xll_array_rows(_FPX* pa)
 	LONG r = 0;
 
 	try {
-		FPX* a = ptr(pa);
-		if (a) {
-			r = a->rows();
+		FPX* _a = ptr(pa);
+		if (_a) {
+			r = _a->rows();
 		}
 		else {
 			r = pa->rows;
@@ -138,9 +179,9 @@ LONG WINAPI xll_array_columns(_FPX* pa)
 	LONG c = 0;
 
 	try {
-		FPX* a = ptr(pa);
-		if (a) {
-			c = a->columns();
+		FPX* _a = ptr(pa);
+		if (_a) {
+			c = _a->columns();
 		}
 		else {
 			c = pa->columns;
@@ -173,9 +214,9 @@ LONG WINAPI xll_array_size(_FPX* pa)
 	LONG c = 0;
 
 	try {
-		FPX* a = ptr(pa);
-		if (a) {
-			c = a->size();
+		FPX* _a = ptr(pa);
+		if (_a) {
+			c = _a->size();
 		}
 		else {
 			c = size(*pa);
@@ -191,65 +232,72 @@ LONG WINAPI xll_array_size(_FPX* pa)
 	return c;
 }
 
-AddIn xai_array_get(
-	Function(XLL_FP, "xll_array_get", "ARRAY.GET")
-	.Arguments({
-		Arg(XLL_HANDLE, "handle", "is a handle to an array of numbers."),
-		Arg(XLL_BOOL, "_fast", "is an option boolean to specify fast lookup. Default is FALSE.")
-		})
-	.FunctionHelp("Return an array associated with handle.")
-	.Category(CATEGORY)
-	.Documentation(R"(
-Retrieve an in-memory array created by
-<code>\ARRAY</code>. By default the handle is checked to
-ensure the array was created by a previous call to <code>\ARRAY</code>.
-)")
-	.SeeAlso({"\\ARRAY"})
-);
-_FPX* WINAPI xll_array_get(HANDLEX h, BOOL fast)
-{
-#pragma XLLEXPORT
-	_FPX* pa = nullptr;
+#ifdef _DEBUG
 
+int xll_array_test()
+{
 	try {
-		handle<FPX> h_(h, !fast);
-		if (h_) {
-			pa = h_->get();
+		{
+			FPX a(1,1);
+			a[0] = 2;
+
+			HANDLEX ha = to_handle<FPX>(&a);
+			_FPX* pa = xll_array_get(ha, true);
+			ensure(pa->array[0] == 2);
+			ensure(pa->rows == 1);
+			ensure(xll_array_rows(pa) == 1);
+			ensure(pa->columns == 1);
+			ensure(xll_array_columns(pa) == 1);
+			ensure(xll_array_size(pa) == 1);
+
+			_FPX* pb = xll_array_resize(pa, 2, 3);
+			ensure(pb->array[0] == 2);
+			ensure(pb->rows == 2);
+			ensure(xll_array_rows(pb) == 2);
+			ensure(pb->columns == 3);
+			ensure(xll_array_columns(pb) == 3);
+			ensure(xll_array_size(pb) == 6);
 		}
 	}
-	catch (const std::exception& ex) {
-		XLL_ERROR(ex.what());
-	}
 	catch (...) {
-		XLL_ERROR("ARRAY.GET: unknown exception");
+		XLL_ERROR(__FUNCTION__ ": failed");
+
+		return FALSE;
 	}
 
-	return pa;
+	return TRUE;
 }
+Auto<OpenAfter> xaoa_array_test(xll_array_test);
+
+#endif // _DEBUG
 
 AddIn xai_array_take(
 	Function(XLL_FPX, "xll_array_take", "ARRAY.TAKE")
 	.Arguments({
-		Arg(XLL_LONG, "n", "is then number of items to take."),
 		Arg(XLL_FPX, "array", "is an array or handle to an array."),
+		Arg(XLL_LONG, "n", "is then number of items to take."),
 		})
 		.FunctionHelp("Take items from front (n > 0) or back (n < 0) of array.")
 	.Category(CATEGORY)
 	.Documentation(R"(
 Take items from front (n > 0) or back (n < 0) of array
-If <code>array</code> has more than one column then take <code>n</code> rows.
+If <code>array</code> has more than one row then take <code>n</code> rows.
 )")
 );
-_FPX* WINAPI xll_array_take(LONG n, _FPX* pa)
+_FPX* WINAPI xll_array_take(_FPX* pa, LONG n)
 {
 #pragma XLLEXPORT
 	static FPX a;
 
 	try {
 		a = *pa;
-		FPX* _a = ptr(&a);
-		array_take(n, _a->get());
-		_a->resize(_a->rows(), _a->columns());
+		FPX* _a = ptr(pa);
+		if (_a) {
+			_a->take(n);
+		}
+		else {
+			a.take(n);
+		}
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
@@ -260,6 +308,7 @@ _FPX* WINAPI xll_array_take(LONG n, _FPX* pa)
 
 	return a.get();
 }
+#if 0
 
 // array.drop
 
@@ -384,6 +433,7 @@ _FPX* WINAPI xll_array_mask(_FPX* pm, _FPX* pa)
 
 	return a.get();
 }
+#endif // 0
 
 AddIn xai_array_sequence(
 	Function(XLL_FP, "xll_array_sequence", "ARRAY.SEQUENCE")
@@ -427,6 +477,7 @@ _FPX* WINAPI xll_array_sequence(double start, double stop, double incr)
 	return a.get();
 }
 
+#if 0
 #ifdef _DEBUG
 
 AddIn xai_array_sort(
@@ -447,33 +498,37 @@ the largest <code>_count</code> values.
 _FPX* WINAPI xll_array_sort(_FPX* pa, LONG n)
 {
 #pragma XLLEXPORT
+	static FPX a;
+	a = *pa;
+	FPX* _a = ptr(&a);
+
 	if (n == 0) {
-		n = size(*pa);
-		std::sort(begin(*pa), end(*pa));
+		n = _a->size();
+		std::sort(_a->begin(), _a->end());
 	}
 	else if (n > 0) {
-		if (static_cast<unsigned>(n) > size(*pa)) {
-			n = size(*pa);
+		if (n > _a->size()) {
+			n = _a->size();
 		}
-		std::partial_sort(begin(*pa), begin(*pa) + n, end(*pa));
+		std::partial_sort(_a->begin(), _a->begin() + n, _a->end());
 	}
 	else if (n == -1) {
-		n = size(*pa);
-		std::sort(begin(*pa), end(*pa), std::greater<double>{});
+		n = _a->size();
+		std::sort(_a->begin(), _a->end(), std::greater<double>{});
 	}
 	else {
-		if (static_cast<unsigned>(-n) > size(*pa)) {
-			n = size(*pa);
+		if (-n > _a->size()) {
+			n = _a->size();
 			n = -n;
 		}
-		std::partial_sort(begin(*pa), begin(*pa) - n, end(*pa), std::greater<double>{});
+		std::partial_sort(_a->begin(), _a->begin() - n, _a->end(), std::greater<double>{});
 	}
 
-	if (pa->rows == 1) {
-		pa->columns = abs(n);
+	if (_a->rows() == 1) {
+		_a->resize(1, abs(n));
 	}
-	else if (pa->columns == 1) {
-		pa->rows = abs(n);
+	else if (_a->columns() == 1) {
+		_a->resize(abs(n), 1);
 	}
 	else {
 		double inf = std::numeric_limits<double>::infinity();
@@ -481,18 +536,18 @@ _FPX* WINAPI xll_array_sort(_FPX* pa, LONG n)
 			inf = -inf;
 		}
 		n = abs(n);
-		pa->rows = n / pa->columns; // might truncate
-		unsigned m = n % pa->columns;
+		_a->resize(n / _a->columns(), n % _a->columns());
+		unsigned m = _a->columns();
 		if (m != 0) {
 			// pad
-			++pa->rows;
-			for (unsigned i = 0; i < pa->columns - m; ++i) {
-				pa->array[n + i] = inf;
+			_a->resize(_a->rows() + 1, _a->columns());
+			for (unsigned i = 0; i < _a->columns() - m; ++i) {
+				(*_a)[n + i] = inf;
 			}
 		}
 	}
 
-	return pa;
+	return a.get();
 }
 
 AddIn xai_array_unique(
@@ -513,37 +568,63 @@ to guarantee all duplicate entries are removed.
 _FPX* WINAPI xll_array_unique(_FPX* pa)
 {
 #pragma XLLEXPORT
-	auto e = std::unique(begin(*pa), end(*pa));
+	static FPX a;
+	a = *pa;
+	FPX* _a = ptr(&a);
+	auto e = std::unique(_a->begin(), _a->end());
 
-	unsigned n = static_cast<unsigned>(e - begin(*pa));
+	unsigned n = static_cast<unsigned>(e - _a->begin());
 
 	if (pa->rows == 1) {
-		pa->columns = n;
+		_a->resize(1, n);
 	}
 	else if (pa->columns == 1) {
-		pa->rows = n;
+		_a->resize(n, 1);
 	}
 	else {
-		double nan = std::numeric_limits<double>::quiet_NaN();
-		pa->rows = n / pa->columns; // might truncate
-		unsigned m = n % pa->columns;
+		_a->resize(n / pa->columns, n % pa->columns);
+		unsigned m = _a->columns();
 		if (m != 0) {
 			// pad
 			++pa->rows;
 			for (unsigned i = 0; i < pa->columns - m; ++i) {
-				pa->array[n + i] = nan;
+				(*_a)[n + i] = std::numeric_limits<double>::quiet_NaN();
 			}
 		}
 	}
 
-	return pa;
+	return a.get();
+}
+
+AddIn xai_array_apply(
+	Function(XLL_FP, "xll_array_apply", "ARRAY.APPLY")
+	.Arguments({
+		Arg(XLL_LPOPER, "function", "is a function."),
+		Arg(XLL_FP, "array", "is an array or handle to an array."),
+		})
+	.FunctionHelp("Apply a function to each element of an array.")
+	.Category(CATEGORY)
+	.Documentation(R"()")
+);
+_FPX* WINAPI xll_array_apply(LPOPER pf, _FPX* pa)
+{
+#pragma XLLEXPORT
+	static FPX a;
+
+	a = *pa;
+	FPX* _a = ptr(&a);
+	for (int i = 0; i < _a->size(); ++i) {
+		(*_a)[i] = Excel(xlUDF, *pf, OPER((*_a)[i])).as_num();
+	}
+
+	return a.get();
 }
 
 int test_array()
 {
 	{
 		_FPX a = { .rows = 1, .columns = 1 };
-		HANDLEX h = xll_array_set(&a, 0);
+		HANDLEX h = xll_array_(&a, 0);
 		_FPX* pa = xll_array_get(h, TRUE);
 		ensure(pa);
 		ensure(pa->rows == 1);
@@ -552,7 +633,7 @@ int test_array()
 	{
 		_FPX a = { .rows = 1, .columns = 1 };
 		a.array[0] = 2;
-		HANDLEX h = xll_array_set(&a, 3);
+		HANDLEX h = xll_array_(&a, 3);
 		_FPX* pa = xll_array_get(h, TRUE);
 		ensure(pa);
 		ensure(xll_array_rows(pa) == 2);
@@ -588,3 +669,4 @@ Auto<OpenAfter> xaoa_test_array([]() {
 	});
 
 #endif // _DEBUG
+#endif // 0

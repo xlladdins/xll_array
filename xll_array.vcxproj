@@ -147,6 +147,7 @@
       <SubSystem>Windows</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <AdditionalOptions>/wholearchive:xll %(AdditionalOptions)</AdditionalOptions>
     </Link>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -171,10 +172,10 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="fms_monoid.t.cpp" />
     <ClCompile Include="xll_array.cpp" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="setup.bat" />
+    <ClCompile Include="fms_op.t.cpp" />
+    <ClCompile Include="xll_op.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="xll\xll.vcxproj">
@@ -182,7 +183,12 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="fms_op.h" />
+    <ClInclude Include="fms_monoid.h" />
     <ClInclude Include="xll_array.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="README.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

@@ -7,27 +7,14 @@ namespace xll {
 	// underlying pointer if 1 x 1 and handle to FPX
 	inline FPX* ptr(_FPX* pa)
 	{
-		if (size(*pa) != 1) {
-			return nullptr;
+		if (size(*pa) == 1) {
+			handle<FPX> _a(pa->array[0]);
+			if (_a) {
+				return _a.ptr();
+			}
 		}
 
-		handle<FPX> h(pa->array[0]);
-
-		return h ? h.ptr() : nullptr;
-	}
-	// pointer to underlying _FPX
-	inline _FPX* _ptr(_FPX* pa)
-	{
-		FPX* _a = ptr(pa);
-
-		return _a ? _a->get() : pa;
-	}
-	// pointer to either FP or handle
-	inline FPX* ptr(FPX* pa)
-	{
-		FPX* _a = ptr(pa->get());
-
-		return _a ? _a : pa;
+		return nullptr;
 	}
 
 	// take elements from front (n > 0) or back (n < 0) of array
