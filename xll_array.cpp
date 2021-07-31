@@ -13,7 +13,7 @@ using namespace xll;
 AddIn xai_array_(
 	Function(XLL_HANDLE, "xll_array_", "\\ARRAY")
 	.Arguments({
-		Arg(XLL_FP, "array", "is an array of numbers."),
+		Arg(XLL_FP, "array", "is an array or handle to an array of numbers."),
 		Arg(XLL_WORD, "_columns", "is an optional number of columns. Default is 0."),
 		})
 	.Uncalced()
@@ -32,14 +32,15 @@ HANDLEX WINAPI xll_array_(const _FPX* pa, WORD c)
 	HANDLEX h = INVALID_HANDLEX;
 
 	try {
+		_FPX& a = *_ptr(pa);
 		if (c != 0) {
-			ensure(size(*pa) == 1 || !"\\ARRAY: first argument must be scalar if second argument is not zero");
-			handle<FPX> h_(new FPX(static_cast<unsigned>(pa->array[0]), c));
+			ensure(size(a) == 1 || !"\\ARRAY: first argument must be scalar if second argument is not zero");
+			handle<FPX> h_(new FPX(static_cast<unsigned>(a.array[0]), c));
 			ensure(h_);
 			h = h_.get();
 		}
 		else {
-			handle<FPX> h_(new FPX(*pa));
+			handle<FPX> h_(new FPX(a));
 			h = h_.get();
 		}
 	}
@@ -100,6 +101,8 @@ AddIn xai_array_resize(
 	.Category(CATEGORY)
 	.Documentation(R"(
 Resize array to <code>rows</code> and <code>columns</code>.
+If <code>array</code> is a handle this function resizes the in-memory array and
+returns its handle, otherwise the resized array is returned.
 )")
 );
 _FPX* WINAPI xll_array_resize(_FPX* pa, LONG r, LONG c)
@@ -232,7 +235,25 @@ LONG WINAPI xll_array_size(_FPX* pa)
 	return c;
 }
 
-#ifdef _DEBUG
+AddIn xai_array_get(
+	Function(XLL_FP, "xll_array_get", "ARRAY.GET")
+	.Arguments({
+		Arg(XLL_HANDLE, "handle", "is a handle to an array of numbers."),
+		Arg(XLL_BOOL, "_fast", "is an option boolean to specify fast lookup. Default is FALSE.")
+		})
+	.FunctionHelp("Return an array associated with handle.")
+	.Category(CATEGORY)
+	.Documentation(R"(
+Retrieve an in-memory array created by
+<code>\ARRAY</code>. By default the handle is checked to
+ensure the array was created by a previous call to <code>\ARRAY</code>.
+)")
+	.SeeAlso({"\\ARRAY"})
+);
+_FPX* WINAPI xll_array_get(HANDLEX h, BOOL fast)
+{
+#pragma XLLEXPORT
+	_FPX* pa = nullptr;
 
 int xll_array_test()
 {
@@ -269,6 +290,74 @@ int xll_array_test()
 }
 Auto<OpenAfter> xaoa_array_test(xll_array_test);
 
+#endif // _DEBUG
+
+AddIn xai_array_sequence(
+	Function(XLL_FP, "xll_array_sequence", "ARRAY.SEQUENCE")
+	.Arguments({
+		Arg(XLL_DOUBLE, "start", "is the first value in the sequence.", "0"),
+		Arg(XLL_DOUBLE, "stop", "is the last value in the sequence.", "3"),
+		Arg(XLL_DOUBLE, "_incr", "is an optional value to increment by. Default is 1.")
+		})
+	.FunctionHelp("Return a one column array from start to stop with specified optional increment.")
+	.Category(CATEGORY)
+	.Documentation(R"(
+Return a one columns array <code>{start; start + incr; ...; stop}<code>.
+)")
+);
+_FPX* WINAPI xll_array_sequence(double start, double stop, double incr)
+{
+#pragma XLLEXPORT
+	static xll::FPX a;
+
+	try {
+		if (incr == 0) {
+			incr = 1;
+			if (start > stop) {
+				incr = -1;
+			}
+		}
+
+		unsigned n = 1u + static_cast<unsigned>(fabs((stop - start) / incr));
+		a.resize(n, 1);
+		for (unsigned i = 0; i < n; ++i) {
+			a[i] = start + i * incr;
+		}
+	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
+	}
+	catch (...) {
+		XLL_ERROR("ARRAY.SEQUENCE: unknown exception");
+	}
+
+	return a.get();
+}
+
+#ifdef _DEBUG
+int test_array()
+{
+	{
+		_FPX a = { .rows = 1, .columns = 1 };
+		HANDLEX h = xll_array_set(&a, 0);
+		_FPX* pa = xll_array_get(h, TRUE);
+		ensure(pa);
+		ensure(pa->rows == 1);
+		ensure(pa->columns == 1);
+	}
+	{
+		_FPX a = { .rows = 1, .columns = 1 };
+		a.array[0] = 2;
+		HANDLEX h = xll_array_set(&a, 3);
+		_FPX* pa = xll_array_get(h, TRUE);
+		ensure(pa);
+		ensure(xll_array_rows(pa) == 2);
+		ensure(xll_array_columns(pa) == 3);
+		ensure(xll_array_size(pa) == 6);
+	}
+
+	return TRUE;
+}
 #endif // _DEBUG
 
 AddIn xai_array_take(
@@ -310,6 +399,26 @@ _FPX* WINAPI xll_array_take(_FPX* pa, LONG n)
 }
 #if 0
 
+#ifdef _DEBUG
+
+int test_array_take()
+{
+	{
+		FPX a = *xll_array_sequence(1, 10, 1);
+		ensure(xll_array_take(0, a.get()) == nullptr);
+		ensure(xll_array_take(5, a.get())->rows == 5);
+		ensure(xll_array_take(5, a.get())->array[0] == 1);
+		ensure(xll_array_take(-5, a.get())->rows == 5);
+		ensure(xll_array_take(-5, a.get())->array[0] == 6);
+		ensure(xll_array_take(100, a.get())->rows == 10);
+		ensure(xll_array_take(-100, a.get())->rows == 10);
+	}
+
+	return TRUE;
+}
+
+#endif // _DEBUG
+
 // array.drop
 
 AddIn xai_array_join(
@@ -326,19 +435,25 @@ The shape of the returned array is determined by the shape of the first array.
 If the first array is a single column then so is the result. If the first
 array is a single row then so is the result.
 If the first array has more than one row the resulting array has the same
-number of columns. If the size of the second array 
+number of columns as the first array. If the size of the second array 
 is not a multiple of the number of columns of the first array then
 the last partial row is omitted.
 <p>
-If <code>array1</code> is a handle then the associated in-memory
-array is modified and its handle is returned. If <code>array2</code> is a handle and
-<code>array2</code> is not, then the in-memory array is modified and
-the handle for the second array is returned.
-If <code>array1</code> is a handle then <code>array2</code> is appended.
-If <code>array2</code> is a handle and <code>array1</code> is not then
-<code>array1</code> is prepended. In this case the shape of the result
-is determined by the second array as described above.
+If <code>array1</code> is a handle then <code>array2</code> is appended to
+the associated in-memory array and the handle to the first array is returned. 
+If <code>array2</code> is a handle and <code>array1</code> is not, 
+then <code>array1</code> is prepended to the 
+in-memory array and the handle for the second array is returned.
+In this case the shape of the result is determined by the second 
+array as described above.
+<p>
+This function is useful for buffering data produced by Excel into memory. For example,
+<code>ARRAY.TAKE(4, ARRAY.JOIN(RAND(), handle))</code> returns a handle to (at most)
+the last 4 values generated by <code>RAND()</code>.
+Use <code>ARRAY.TAKE(-4, ARRAY.JOIN(handle, RAND())</code> to get the same items
+in reverse order more efficiently.
 )")
+	.SeeAlso({"\\ARRAY", "ARRAY.TAKE"})
 );
 _FPX* WINAPI xll_array_join(_FPX* pa1, _FPX* pa2)
 {
@@ -346,7 +461,7 @@ _FPX* WINAPI xll_array_join(_FPX* pa1, _FPX* pa2)
 	static xll::FPX a;
 
 	try {
-		// second array not a handle
+		// pa1 is a handle or pa2 is not
 		if (ptr(pa1) != nullptr or ptr(pa2) == nullptr) {
 			a = *pa1; // copy either handle or array
 			FPX* pa = ptr(&a);
@@ -398,19 +513,52 @@ _FPX* WINAPI xll_array_join(_FPX* pa1, _FPX* pa2)
 
 	return a.get();
 }
+#ifdef _DEBUG
 
+int test_array_join()
+{
+	{
+		FPX b = *xll_array_sequence(1, 10, 1);
+		_FPX r = { .rows = 1, .columns = 1 };
+		r.array[0] = 2;
+		WORD c = 3;
+		r.array[0] = xll_array_set(&r, c);
+		_FPX* pab = xll_array_join(&r, b.get());
+		ensure(pab->rows == 1 + b.size());
+		ensure(pab->columns == 1);
+		ensure(pab->array[0] == r.array[0]);
+		ensure(pab->array[1] == b[0]);
+	}
+	{
+		FPX b = *xll_array_sequence(1, 10, 1);
+		_FPX r = { .rows = 1, .columns = 1 };
+		r.array[0] = 2;
+		WORD c = 3;
+		r.array[0] = xll_array_set(&r, c);
+		_FPX* pab = xll_array_join(b.get(), &r);
+		ensure(pab->rows == 1 + b.size());
+		ensure(pab->columns == 1);
+		ensure(pab->array[10] == r.array[0]);
+		ensure(pab->array[0] == b[0]);
+	}
+
+	return TRUE;
+}
+
+#endif // _DEBUG
 
 AddIn xai_array_mask(
 	Function(XLL_FPX, "xll_array_mask", "ARRAY.MASK")
 	.Arguments({
-		Arg(XLL_FPX, "mask", "is a mask to apply to array."),
+		Arg(XLL_FPX, "mask", "is a mask or handle to a mask to be applied to array."),
 		Arg(XLL_FPX, "array", "is an array or handle to an array."),
 		})
 		.FunctionHelp("Return array values where corresponding mask is non-zero.")
 	.Category(CATEGORY)
 	.Documentation(R"(
 If <code>mask</code> is smaller than <code>array</code> then it is
-applied using cyclic indices.
+applied using cyclic indices. If <code>array</code> is a handle then
+the handle to the masked array is returned.
 )")
 );
 _FPX* WINAPI xll_array_mask(_FPX* pm, _FPX* pa)
@@ -421,7 +569,8 @@ _FPX* WINAPI xll_array_mask(_FPX* pm, _FPX* pa)
 	try {
 		a = *pa;
 		FPX* _a = ptr(&a);
-		array_mask(pm, _a->get());
+		_FPX* _m = _ptr(pm);
+		array_mask(_m, _a->get());
 		_a->resize(_a->rows(), _a->columns());
 	}
 	catch (const std::exception& ex) {
@@ -435,23 +584,6 @@ _FPX* WINAPI xll_array_mask(_FPX* pm, _FPX* pa)
 }
 #endif // 0
 
-AddIn xai_array_sequence(
-	Function(XLL_FP, "xll_array_sequence", "ARRAY.SEQUENCE")
-	.Arguments({
-		Arg(XLL_DOUBLE, "start", "is the first value in the sequence.", "0"),
-		Arg(XLL_DOUBLE, "stop", "is the last value in the sequence.", "3"),
-		Arg(XLL_DOUBLE, "_incr", "is an optional value to increment by. Default is 1.")
-		})
-	.FunctionHelp("Return a one column array from start to stop with specified optional increment.")
-	.Category(CATEGORY)
-	.Documentation(R"(
-Return a one columns array <code>{start; start + incr; ...; stop}<code>.
-)")
-);
-_FPX* WINAPI xll_array_sequence(double start, double stop, double incr)
-{
-#pragma XLLEXPORT
-	static xll::FPX a;
 
 	try {
 		if (incr == 0) {
@@ -483,16 +615,22 @@ _FPX* WINAPI xll_array_sequence(double start, double stop, double incr)
 AddIn xai_array_sort(
 	Function(XLL_FP, "xll_array_sort", "ARRAY.SORT")
 	.Arguments({
-		Arg(XLL_FP, "array", "is an array to sort"),
+		Arg(XLL_FP, "array", "is an array or handle to an array to sort"),
 		Arg(XLL_LONG, "_count", "is an optional number of elements to partial sort. Default is 0."),
 		})
 		.FunctionHelp("Sort _count elements of array in increasing (_count >= 0) or decreasing (n < 0) order.")
 	.Category(CATEGORY)
 	.Documentation(R"xyzyx(
-Sort all elements of <code>array</code> in increasing numerical order when <code>_count = 0</code>. If
-<code>_count = -1</code> sort in decreasing order. If <code>_count > 0</code> only sort
+Sort all elements of <code>array</code> in increasing numerical order when 
+<code>_count = 0</code>. 
+If<code>_count = -1</code> sort in decreasing order. If <code>_count > 0</code> only sort
 the smallest <code>_count</code> values. If <code>_count < -1</code> only sort
-the largest <code>_count</code> values.
+the largest <code>-_count</code> values.
+If <code>array</code> is not a row or column then partial elements of
+the last row are set to \(\infty\) or \(-\infty\) if the sort is
+increasing or decreasing, respecively.
+<p>
+If <code>array</code> is a handle return a handle to the sorted array.
 )xyzyx")
 );
 _FPX* WINAPI xll_array_sort(_FPX* pa, LONG n)
@@ -553,15 +691,18 @@ _FPX* WINAPI xll_array_sort(_FPX* pa, LONG n)
 AddIn xai_array_unique(
 	Function(XLL_FP, "xll_array_unique", "ARRAY.UNIQUE")
 	.Arguments({
-		Arg(XLL_FP, "array", "is an array to unique"),
+		Arg(XLL_FP, "array", "is an array or a handle to an array"),
 		})
 		.FunctionHelp("Remove consecutive duplicates from array.")
 	.Category(CATEGORY)
 	.Documentation(R"xyzyx(
-<code>ARRAY.UNIQUE</code> calls the STL function 
+This function calls the STL function 
 <a href="https://en.cppreference.com/w/cpp/algorithm/unique"<code>std::unique</code></a>
 on <code>array</code>. Just like <code>std::unique</code>, the array must be sorted
 to guarantee all duplicate entries are removed.
+<p>
+If <code>array</code> is not a row or column then partial elements of
+the last row are set to NaN.
 )xyzyx")
 	.SeeAlso({"ARRAY.SORT"})
 );
@@ -640,33 +781,14 @@ int test_array()
 		ensure(xll_array_columns(pa) == 3);
 		ensure(xll_array_size(pa) == 6);
 	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
 
-	return TRUE;
-}
-int test_take()
-{
-	{
-		FPX a = *xll_array_sequence(1, 10, 1);
-		ensure(xll_array_take(0, a.get()) == nullptr);
-		ensure(xll_array_take(5, a.get())->rows == 5);
-		ensure(xll_array_take(5, a.get())->array[0] == 1);
-		ensure(xll_array_take(-5, a.get())->rows == 5);
-		ensure(xll_array_take(-5, a.get())->array[0] == 6);
-		ensure(xll_array_take(100, a.get())->rows == 10);
-		ensure(xll_array_take(-100, a.get())->rows == 10);
+		return FALSE;
 	}
 
 	return TRUE;
-}
-
-Auto<OpenAfter> xaoa_test_array([]() {
-	//_crtBreakAlloc = 2089;
-	return TRUE
-		&& test_array()
-		&& test_take()
-		;
-
-	});
+});
 
 #endif // _DEBUG
 #endif // 0
