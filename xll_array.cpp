@@ -32,15 +32,14 @@ HANDLEX WINAPI xll_array_(const _FPX* pa, WORD c)
 	HANDLEX h = INVALID_HANDLEX;
 
 	try {
-		_FPX& a = *_ptr(pa);
 		if (c != 0) {
-			ensure(size(a) == 1 || !"\\ARRAY: first argument must be scalar if second argument is not zero");
-			handle<FPX> h_(new FPX(static_cast<unsigned>(a.array[0]), c));
+			ensure(size(*pa) == 1 || !"\\ARRAY: first argument must be scalar if second argument is not zero");
+			handle<FPX> h_(new FPX(static_cast<unsigned>(pa->array[0]), c));
 			ensure(h_);
 			h = h_.get();
 		}
 		else {
-			handle<FPX> h_(new FPX(a));
+			handle<FPX> h_(new FPX(*pa));
 			h = h_.get();
 		}
 	}
@@ -235,25 +234,7 @@ LONG WINAPI xll_array_size(_FPX* pa)
 	return c;
 }
 
-AddIn xai_array_get(
-	Function(XLL_FP, "xll_array_get", "ARRAY.GET")
-	.Arguments({
-		Arg(XLL_HANDLE, "handle", "is a handle to an array of numbers."),
-		Arg(XLL_BOOL, "_fast", "is an option boolean to specify fast lookup. Default is FALSE.")
-		})
-	.FunctionHelp("Return an array associated with handle.")
-	.Category(CATEGORY)
-	.Documentation(R"(
-Retrieve an in-memory array created by
-<code>\ARRAY</code>. By default the handle is checked to
-ensure the array was created by a previous call to <code>\ARRAY</code>.
-)")
-	.SeeAlso({"\\ARRAY"})
-);
-_FPX* WINAPI xll_array_get(HANDLEX h, BOOL fast)
-{
-#pragma XLLEXPORT
-	_FPX* pa = nullptr;
+#ifdef _DEBUG
 
 int xll_array_test()
 {
@@ -339,7 +320,7 @@ int test_array()
 {
 	{
 		_FPX a = { .rows = 1, .columns = 1 };
-		HANDLEX h = xll_array_set(&a, 0);
+		HANDLEX h = xll_array_(&a, 0);
 		_FPX* pa = xll_array_get(h, TRUE);
 		ensure(pa);
 		ensure(pa->rows == 1);
@@ -348,7 +329,7 @@ int test_array()
 	{
 		_FPX a = { .rows = 1, .columns = 1 };
 		a.array[0] = 2;
-		HANDLEX h = xll_array_set(&a, 3);
+		HANDLEX h = xll_array_(&a, 3);
 		_FPX* pa = xll_array_get(h, TRUE);
 		ensure(pa);
 		ensure(xll_array_rows(pa) == 2);
@@ -583,31 +564,6 @@ _FPX* WINAPI xll_array_mask(_FPX* pm, _FPX* pa)
 	return a.get();
 }
 #endif // 0
-
-
-	try {
-		if (incr == 0) {
-			incr = 1;
-			if (start > stop) {
-				incr = -1;
-			}
-		}
-
-		unsigned n = 1u + static_cast<unsigned>(fabs((stop - start) / incr));
-		a.resize(n, 1);
-		for (unsigned i = 0; i < n; ++i) {
-			a[i] = start + i * incr;
-		}
-	}
-	catch (const std::exception& ex) {
-		XLL_ERROR(ex.what());
-	}
-	catch (...) {
-		XLL_ERROR("ARRAY.SEQUENCE: unknown exception");
-	}
-
-	return a.get();
-}
 
 #if 0
 #ifdef _DEBUG
