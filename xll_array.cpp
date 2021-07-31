@@ -10,6 +10,8 @@
 
 using namespace xll;
 
+using xcstr = traits<XLOPERX>::xcstr;
+
 AddIn xai_array_(
 	Function(XLL_HANDLE, "xll_array_", "\\ARRAY")
 	.Arguments({
@@ -272,6 +274,61 @@ int xll_array_test()
 Auto<OpenAfter> xaoa_array_test(xll_array_test);
 
 #endif // _DEBUG
+
+AddIn xai_array_index(
+	Function(XLL_FPX, "xll_array_index", "ARRAY.INDEX")
+	.Arguments({
+		Arg(XLL_FPX, "array", "is a array or handle to a array."),
+		Arg(XLL_LPOPER, "rows", "are an array of rows to return."),
+		Arg(XLL_LPOPER, "columns", "are an array of columns to return."),
+		})
+		.FunctionHelp("Return rows and columns of array.")
+	.Category(CATEGORY)
+	.Documentation(R"(
+This works like <code>INDEX</code> for arrays except indices are cyclic.
+If <code>rows</code> or <code>columns</code> are missing then all
+rows or columns are returned.
+)")
+);
+_FPX* WINAPI xll_array_index(_FPX* parray, LPOPER prows, LPOPER pcolumns)
+{
+#pragma XLLEXPORT
+	static FPX a;
+
+	try {
+		unsigned r = prows->size();
+		unsigned c = pcolumns->size();
+
+		if (size(*parray) == 1) {
+			handle<FPX> h_(parray->array[0]);
+			if (h_) {
+				parray = h_->get();
+			}
+		}
+
+		if (prows->is_missing()) {
+			r = parray->rows;
+		}
+		if (pcolumns->is_missing()) {
+			c = parray->columns;
+		}
+
+		a.resize(r, c);
+
+		for (unsigned i = 0; i < r; ++i) {
+			unsigned ri = prows->is_missing() ? i : static_cast<int>((*prows)[i].val.num);
+			for (unsigned j = 0; j < c; ++j) {
+				unsigned cj = pcolumns->is_missing() ? j : static_cast<unsigned>((*pcolumns)[j].val.num);
+				a(i, j) = index(*parray, ri, cj);
+			}
+		}
+	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
+	}
+
+	return a.get();
+}
 
 AddIn xai_array_sequence(
 	Function(XLL_FP, "xll_array_sequence", "ARRAY.SEQUENCE")
@@ -559,12 +616,13 @@ int test_array_join()
 }
 
 #endif // _DEBUG
+#endif // 0
 
 AddIn xai_array_mask(
 	Function(XLL_FPX, "xll_array_mask", "ARRAY.MASK")
 	.Arguments({
-		Arg(XLL_FPX, "mask", "is a mask or handle to a mask to be applied to array."),
 		Arg(XLL_FPX, "array", "is an array or handle to an array."),
+		Arg(XLL_FPX, "mask", "is a mask or handle to a mask to be applied to array."),
 		})
 		.FunctionHelp("Return array values where corresponding mask is non-zero.")
 	.Category(CATEGORY)
@@ -574,17 +632,37 @@ applied using cyclic indices. If <code>array</code> is a handle then
 the handle to the masked array is returned.
 )")
 );
-_FPX* WINAPI xll_array_mask(_FPX* pm, _FPX* pa)
+_FPX* WINAPI xll_array_mask(_FPX* pa, _FPX* pm)
 {
 #pragma XLLEXPORT
 	static FPX a;
 
 	try {
 		a = *pa;
-		FPX* _a = ptr(&a);
-		_FPX* _m = _ptr(pm);
-		array_mask(_m, _a->get());
-		_a->resize(_a->rows(), _a->columns());
+		FPX* _a = ptr(pa);
+		FPX* _m = ptr(pm);
+		if (_a->rows() == 1) {
+			ensure(_a->size() == _m->size());
+			int k = 0;
+			for (int j = 0; j < _m->size(); ++j) {
+				if ((*_m)[j]) {
+					(*_a)[k] = (*_a)[j];
+					++k;
+				}
+			}
+			_a->get()->columns = k;
+		}
+		else {
+			ensure(_a->columns() == _m->size());
+			int k = 0;
+			for (int j = 0; j < _m->size(); ++j) {
+				if ((*_m)[j]) {
+					for (int i = 0; i < _a->rows(); ++i) {
+						(*_a)(i, k) = (*_a)(i, j);
+					}
+				}
+			}
+		}
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
@@ -595,7 +673,7 @@ _FPX* WINAPI xll_array_mask(_FPX* pm, _FPX* pa)
 
 	return a.get();
 }
-#endif // 0
+
 
 #if 0
 #ifdef _DEBUG
@@ -780,3 +858,34 @@ int test_array()
 
 #endif // _DEBUG
 #endif // 0
+
+AddIn xai_array_diff(
+	Function(XLL_FPX, "xll_array_diff", "ARRAY.DIFF")
+	.Arguments({
+		Arg(XLL_FPX, "array", "is an array or handle to an array."),
+		Arg(XLL_CSTRING, "_op", "is an optional binary opertor to use. Default is minus.")
+		})
+	.FunctionHelp("Return adjacent differences of array.")
+	.Category(CATEGORY)
+	.Documentation(R"xyzyx(
+Return <code>{a0, op(a1,a0), op(a2, a1),...}</code>.
+)xyzyx")
+);
+_FPX* WINAPI xll_array_diff(_FPX* pa, xcstr op)
+{
+#pragma XLLEXPORT
+	unsigned na = size(*pa);
+
+	if (na == 1) {
+		handle<FPX> _a(pa->array[0]);
+		if (_a) {
+			pa = _a->get();
+		}
+	}
+
+	if (!*op or *op == '-') {
+		pa = xll::diff<std::minus<double>>(pa);
+	}
+
+	return pa;
+}

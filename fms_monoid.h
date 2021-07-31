@@ -34,6 +34,20 @@ namespace fms {
 	};
 	template<class X>
 	inline constexpr auto monoid_add = _monoid_add<X>{};
+	
+	template<class X> requires std::is_arithmetic_v<X>
+	struct _monoid_mul : public monoid<X> {
+		X _op() const override
+		{
+			return nullop_one<X>();
+		}
+		X _op(const X& x, const X& y) const override
+		{
+			return binop_mul<X>(x, y);
+		}
+	};
+	template<class X>
+	inline constexpr auto monoid_mul = _monoid_mul<X>{};
 	// sub, mul, ...
 
 	template<class X>
@@ -97,6 +111,12 @@ namespace fms {
 			assert(fold<X>(monoid_add<X>, 1) == 1);
 			assert(fold<X>(monoid_add<X>, 1, 2) == 1 + 2);
 			assert(fold<X>(monoid_add<X>, 1, 2, 3) == 1 + 2 + 3);
+		}
+		{
+			assert(fold<X>(monoid_mul<X>) == 1);
+			assert(fold<X>(monoid_mul<X>, 1) == 1);
+			assert(fold<X>(monoid_mul<X>, 1, 2) == 1 * 2);
+			assert(fold<X>(monoid_mul<X>, 1, 2, 3) == 1 * 2 * 3);
 		}
 		{
 			X i[] = { 1,2,3 };

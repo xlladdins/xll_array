@@ -82,33 +82,45 @@ namespace fms {
 	inline constexpr auto binop_add = _binop_add<X>{};
 
 	template<class X> requires std::is_arithmetic_v<X>
-	struct binop_sub : public binop<X> {
+	struct _binop_sub : public binop<X> {
 		X _op(const X& x, const X& y) const override
 		{
 			return x - y;
 		}
 	};
+	template<class X>
+	inline constexpr auto binop_sub = _binop_sub<X>{};
+
 	template<class X> requires std::is_arithmetic_v<X>
-	struct binop_mul : public binop<X> {
+	struct _binop_mul : public binop<X> {
 		X _op(const X& x, const X& y) const override
 		{
 			return x * y;
 		}
 	};
+	template<class X>
+	inline constexpr auto binop_mul = _binop_mul<X>{};
+
 	template<class X> requires std::is_arithmetic_v<X>
-	struct binop_div : public binop<X> {
+	struct _binop_div : public binop<X> {
 		X _op(const X& x, const X& y) const override
 		{
 			return x / y;
 		}
 	};
+	template<class X>
+	inline constexpr auto binop_div = _binop_div<X>{};
+
 	template<class X> requires std::is_arithmetic_v<X>
-	struct binop_mod : public binop<X> {
+	struct _binop_mod : public binop<X> {
 		X _op(const X& x, const X& y) const override
 		{
 			return x % y;
 		}
 	};
+	template<class X>
+	inline constexpr auto binop_mod = _binop_mod<X>{};
+
 	template<class X> requires std::is_arithmetic_v<X>
 	struct _binop_max : public binop<X> {
 		X _op(const X& x, const X& y) const override
@@ -120,47 +132,64 @@ namespace fms {
 	inline constexpr auto binop_max = _binop_max<X>{};
 
 	template<class X> requires std::is_arithmetic_v<X>
-	struct binop_min : public binop<X> {
+	struct _binop_min : public binop<X> {
 		X _op(const X& x, const X& y) const override
 		{
 			return std::min(x, y);
 		}
 	};
+	template<class X>
+	inline constexpr auto binop_min = _binop_min<X>{};
+
 	template<class X> requires std::is_arithmetic_v<X>
-	struct binop_logical_or : public binop<X> {
+	struct _binop_logical_or : public binop<X> {
 		X _op(const X& x, const X& y) const override
 		{
 			return x || y;
 		}
 	};
+	template<class X>
+	inline constexpr auto binop_logical_or = _binop_logical_or<X>{};
+
 	template<class X> requires std::is_arithmetic_v<X>
-	struct binop_logical_and : public binop<X> {
+	struct _binop_logical_and : public binop<X> {
 		X _op(const X& x, const X& y) const override
 		{
 			return x & y;
 		}
 	};
+	template<class X>
+	inline constexpr auto binop_logical_and = _binop_logical_and<X>{};
+
 	template<class X> requires std::is_integral_v<X>
-	struct binop_bit_or : public binop<X> {
+	struct _binop_bit_or : public binop<X> {
 		X _op(const X& x, const X& y) const override
 		{
 			return x | y;
 		}
 	};
+	template<class X>
+	inline constexpr auto binop_bit_or = _binop_bit_or<X>{};
+
 	template<class X> requires std::is_integral_v<X>
-	struct binop_bit_and : public binop<X> {
+	struct _binop_bit_and : public binop<X> {
 		X _op(const X& x, const X& y) const override
 		{
 			return x & y;
 		}
 	};
+	template<class X>
+	inline constexpr auto binop_bit_and = _binop_bit_and<X>{};
+
 	template<class X> requires std::is_integral_v<X>
-	struct binop_bit_xor : public binop<X> {
+	struct _binop_bit_xor : public binop<X> {
 		X _op(const X& x, const X& y) const override
 		{
 			return x ^ y;
 		}
 	};
+	template<class X>
+	inline constexpr auto binop_bit_xor = _binop_bit_xor<X>{};
 
 #ifdef _DEBUG
 #include <cassert>
