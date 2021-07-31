@@ -47,5 +47,5 @@ If `f` is a string then it is assumed to be the name of an Excel unary function.
 ## `SCAN`
 
 The _scan_ (or _right fold_) of an array using a binary operator `m` is
-`{a0, m(a0, a1), m(a0, m(a1, a2), ...)}` The pre-defined binary operators
-are `ADD`, `SUB`, `MUL`, `DIV`, `MOD`, `MAX`, and `MIN`.
+`{a0, m(a0, a1), m(a0, m(a1, a2), ...)}`. The add-in defines binary operators 
+`ADD`, `SUB`, `MUL`, `DIV`, `MOD`, `MAX`, and `MIN`.
