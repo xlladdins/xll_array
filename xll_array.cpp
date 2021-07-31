@@ -315,32 +315,6 @@ _FPX* WINAPI xll_array_sequence(double start, double stop, double incr)
 	return a.get();
 }
 
-#ifdef _DEBUG
-int test_array()
-{
-	{
-		_FPX a = { .rows = 1, .columns = 1 };
-		HANDLEX h = xll_array_(&a, 0);
-		_FPX* pa = xll_array_get(h, TRUE);
-		ensure(pa);
-		ensure(pa->rows == 1);
-		ensure(pa->columns == 1);
-	}
-	{
-		_FPX a = { .rows = 1, .columns = 1 };
-		a.array[0] = 2;
-		HANDLEX h = xll_array_(&a, 3);
-		_FPX* pa = xll_array_get(h, TRUE);
-		ensure(pa);
-		ensure(xll_array_rows(pa) == 2);
-		ensure(xll_array_columns(pa) == 3);
-		ensure(xll_array_size(pa) == 6);
-	}
-
-	return TRUE;
-}
-#endif // _DEBUG
-
 AddIn xai_array_take(
 	Function(XLL_FPX, "xll_array_take", "ARRAY.TAKE")
 	.Arguments({
@@ -378,27 +352,28 @@ _FPX* WINAPI xll_array_take(_FPX* pa, LONG n)
 
 	return a.get();
 }
-#if 0
-
 #ifdef _DEBUG
 
-int test_array_take()
+int xll_array_take_test()
 {
 	{
 		FPX a = *xll_array_sequence(1, 10, 1);
-		ensure(xll_array_take(0, a.get()) == nullptr);
-		ensure(xll_array_take(5, a.get())->rows == 5);
-		ensure(xll_array_take(5, a.get())->array[0] == 1);
-		ensure(xll_array_take(-5, a.get())->rows == 5);
-		ensure(xll_array_take(-5, a.get())->array[0] == 6);
-		ensure(xll_array_take(100, a.get())->rows == 10);
-		ensure(xll_array_take(-100, a.get())->rows == 10);
+		ensure(xll_array_take(a.get(), 0) == nullptr);
+		ensure(xll_array_take(a.get(), 5)->rows == 5);
+		ensure(xll_array_take(a.get(), 5)->array[0] == 1);
+		ensure(xll_array_take(a.get(), -5)->rows == 5);
+		ensure(xll_array_take(a.get(), -5)->array[0] == 6);
+		ensure(xll_array_take(a.get(), 100)->rows == 10);
+		ensure(xll_array_take(a.get(), -100)->rows == 10);
 	}
 
 	return TRUE;
 }
+Auto<OpenAfter> xaoa_array_take_test(xll_array_take_test);
 
 #endif // _DEBUG
+#if 0
+
 
 // array.drop
 
