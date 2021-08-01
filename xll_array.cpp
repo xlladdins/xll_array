@@ -869,6 +869,7 @@ int test_array()
 #endif // _DEBUG
 #endif // 0
 
+
 AddIn xai_array_diff(
 	Function(XLL_FPX, "xll_array_diff", "ARRAY.DIFF")
 	.Arguments({
@@ -895,6 +896,9 @@ _FPX* WINAPI xll_array_diff(_FPX* pa, xcstr op)
 
 	if (!*op or *op == '-') {
 		pa = xll::diff<std::minus<double>>(pa);
+	}
+	if (!*op or *op == '/') {
+		pa = xll::diff<std::divides<double>>(pa);
 	}
 
 	return pa;

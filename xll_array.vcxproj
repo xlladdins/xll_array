@@ -175,6 +175,7 @@
     <ClCompile Include="fms_monoid.t.cpp" />
     <ClCompile Include="xll_array.cpp" />
     <ClCompile Include="fms_op.t.cpp" />
+    <ClCompile Include="xll_monoid.cpp" />
     <ClCompile Include="xll_op.cpp" />
   </ItemGroup>
   <ItemGroup>

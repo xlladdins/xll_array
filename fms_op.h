@@ -41,29 +41,38 @@ namespace fms {
 		virtual X _op(const X&) const = 0;
 	};
 
-#define MAKE_UNOP(Op, op) template<class X> \
-	struct _unop_ ## Op : public unop<X> { \
-		X _op(const X& x) const override { return op(x); }; \
-	template<class X> inline constexpr auto unop_ ## Op = _unop_ ## Op<X>{}
-
-	//MAKE_UNOP(neg, std::negate<X>{});
-
 	template<class X>
-	struct _unop_not : public unop<X> {
-		~_unop_not()
-		{ }
+	struct _unop_identity : public unop<X> {
 		X _op(const X& x) const override
 		{
-			return !x;
+			return x;
 		}
 	};
 	template<class X>
-	inline constexpr auto unop_not = _unop_not<X>{};
+	inline constexpr auto unop_identity = _unop_identity<X>{};
+
+	template<class X>
+	struct _unop_neg : public unop<X> {
+		X _op(const X& x) const override
+		{
+			return -x;
+		}
+	};
+	template<class X>
+	inline constexpr auto unop_neg = _unop_neg<X>{};
+
+	template<class X>
+	struct _unop_logical_not : public unop<X> {
+		X _op(const X& x) const override
+		{
+			return static_cast<X>(!x);
+		}
+	};
+	template<class X>
+	inline constexpr auto unop_logical_not = _unop_logical_not<X>{};
 
 	template<class X>
 	struct _unop_bit_not : public unop<X> {
-		~_unop_bit_not()
-		{ }
 		X _op(const X& x) const override
 		{
 			return ~x;
@@ -72,14 +81,13 @@ namespace fms {
 	template<class X>
 	inline constexpr auto unop_bit_not = _unop_bit_not<X>{};
 
+	/*
 	template<class X>
 	class _unop_ge : public unop<X> {
 		X y;
 	public:
 		_unop_ge(const X& y)
 			: y(y)
-		{ }
-		~_unop_ge()
 		{ }
 		X _op(const X& x) const override
 		{
@@ -88,6 +96,7 @@ namespace fms {
 	};
 	template<class X>
 	inline constexpr auto unop_ge = _unop_ge<X>{};
+	*/
 
 	template<class X>
 	struct binop {
@@ -95,7 +104,6 @@ namespace fms {
 		{
 			return _op(x, y);
 		}
-		//virtual ~binop() { }
 	protected:
 		virtual X _op(const X&, const X&) const = 0;
 	};
@@ -112,11 +120,19 @@ namespace fms {
 	MAKE_BINOP(mod, std::modulus<X>{});
 	MAKE_BINOP(max, std::max<X>);
 	MAKE_BINOP(min, std::min<X>);
+
 	MAKE_BINOP(logical_or, std::logical_or<X>{});
 	MAKE_BINOP(logical_and, std::logical_and<X>{});
 	MAKE_BINOP(bit_or, std::bit_or<X>{});
 	MAKE_BINOP(bit_and, std::bit_and<X>{});
 	MAKE_BINOP(bit_xor, std::bit_xor<X>{});
+
+	MAKE_BINOP(lt, std::less<X>{});
+	MAKE_BINOP(le, std::less_equal<X>{});
+	MAKE_BINOP(gt, std::greater<X>{});
+	MAKE_BINOP(ge, std::greater_equal<X>{});
+	MAKE_BINOP(eq, std::equal_to<X>{});
+	MAKE_BINOP(ne, std::not_equal_to<X>{});
 
 #undef MAKE_BINOP
 
@@ -127,15 +143,27 @@ namespace fms {
 			// use args
 		};
 	}
+	*/
 
 	// expr = null|un|bin
 	// 1 + 2*_0 : expr = binop_add(nullop(1), binop_mul(nullop(2), _0))
 	// expr(3) : auto _0 = nullop(3); return expr(); 
-
-	template<class X> requires std::is_arithmetic_v<X>
-	class expr {
-
-	};
+	/*
+	template<class X>
+	inline auto bindl(const auto& op, const X& x)
+	{
+		return [x, &op](const X& y) { return op(x, y);  };
+	}
+	template<class X>
+	inline auto bindr(const auto& op, const X& y)
+	{
+		return [y, &op](const X& x) { return op(x, y);  };
+	}
+	template<class X>
+	inline auto bind(const auto& op, const X& x)
+	{
+		return [x, &op]() { return op(x); };
+	}
 	*/
 
 #ifdef _DEBUG
@@ -144,7 +172,9 @@ namespace fms {
 	template<class X>
 	inline int op_test() {
 		{
-			//assert(unop_not<X>(2) == !2);
+			assert(unop_neg<X>(-2) == 2);
+			assert(unop_logical_not<X>(2) == X(!2));
+			assert(unop_bit_not<int>(2) == ~2);
 		}
 		{
 			X x(2), y(1);

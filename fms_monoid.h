@@ -16,6 +16,7 @@ namespace fms {
 		{
 			return _op(x, y);
 		}
+		constexpr virtual ~monoid() { }
 	private:
 		virtual X _op() const = 0;
 		virtual X _op(const X&, const X&) const = 0;
@@ -23,6 +24,8 @@ namespace fms {
 	
 	template<class X>
 	struct _monoid_add : public monoid<X> {
+		constexpr _monoid_add() noexcept { }
+		constexpr ~_monoid_add() noexcept { }
 		X _op() const override
 		{
 			return nullop_zero<X>();
@@ -37,6 +40,8 @@ namespace fms {
 	
 	template<class X>
 	struct _monoid_mul : public monoid<X> {
+		constexpr _monoid_mul() noexcept { }
+		constexpr ~_monoid_mul() noexcept { }
 		X _op() const override
 		{
 			return nullop_one<X>();
