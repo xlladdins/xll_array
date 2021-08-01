@@ -230,7 +230,7 @@ LONG WINAPI xll_array_size(_FPX* pa)
 		XLL_ERROR(ex.what());
 	}
 	catch (...) {
-		XLL_ERROR("ARRAY.SIZE: unknown exception");
+		XLL_ERROR(__FUNCTION__ ": unknown exception");
 	}
 
 	return c;
@@ -316,7 +316,7 @@ _FPX* WINAPI xll_array_index(_FPX* parray, LPOPER prows, LPOPER pcolumns)
 		a.resize(r, c);
 
 		for (unsigned i = 0; i < r; ++i) {
-			unsigned ri = prows->is_missing() ? i : static_cast<int>((*prows)[i].val.num);
+			unsigned ri = prows->is_missing() ? i : static_cast<unsigned>((*prows)[i].val.num);
 			for (unsigned j = 0; j < c; ++j) {
 				unsigned cj = pcolumns->is_missing() ? j : static_cast<unsigned>((*pcolumns)[j].val.num);
 				a(i, j) = index(*parray, ri, cj);
@@ -341,6 +341,8 @@ AddIn xai_array_sequence(
 	.Category(CATEGORY)
 	.Documentation(R"(
 Return a one columns array <code>{start; start + incr; ...; stop}<code>.
+If <code>_incr</code> is greater than 1 return <code>_incr</code> values
+from <code>start</code> to <code>stop</code>
 )")
 );
 _FPX* WINAPI xll_array_sequence(double start, double stop, double incr)
@@ -356,7 +358,15 @@ _FPX* WINAPI xll_array_sequence(double start, double stop, double incr)
 			}
 		}
 
-		unsigned n = 1u + static_cast<unsigned>(fabs((stop - start) / incr));
+		unsigned n;
+		if (incr > 1) {
+			n = static_cast<unsigned>(incr);
+			incr = (stop - start) / (n - 1);
+		}
+		else {
+			n = 1u + static_cast<unsigned>(fabs((stop - start) / incr));
+		}
+
 		a.resize(n, 1);
 		for (unsigned i = 0; i < n; ++i) {
 			a[i] = start + i * incr;

@@ -6,7 +6,7 @@
 
 namespace fms {
 
-	template<class X> requires std::is_arithmetic_v<X>
+	template<class X>
 	struct monoid {
 		X operator()() const
 		{
@@ -21,7 +21,7 @@ namespace fms {
 		virtual X _op(const X&, const X&) const = 0;
 	};
 	
-	template<class X> requires std::is_arithmetic_v<X>
+	template<class X>
 	struct _monoid_add : public monoid<X> {
 		X _op() const override
 		{
@@ -35,7 +35,7 @@ namespace fms {
 	template<class X>
 	inline constexpr auto monoid_add = _monoid_add<X>{};
 	
-	template<class X> requires std::is_arithmetic_v<X>
+	template<class X>
 	struct _monoid_mul : public monoid<X> {
 		X _op() const override
 		{
