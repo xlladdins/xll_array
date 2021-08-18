@@ -26,6 +26,11 @@ Create an in-memory two-dimensional array of numbers to be used by array functio
 If <code>array</code> is a scalar and <code>_columns</code> is not zero then
 return a handle to an uninitialized array having <code>array</code> rows
 and <code>_columns</code> columns.
+
+Most array functions work in two modes: <em>function</em> and <em>command</em>.
+If the first argument is an array then an new array is returned and the array function
+has no side effects. If the first argument is a handle to an array then the function
+modifies the in-memory array and returns the array handle. 
 )")
 );
 HANDLEX WINAPI xll_array_(const _FPX* pa, WORD c)
@@ -290,36 +295,36 @@ If <code>rows</code> or <code>columns</code> are missing then all
 rows or columns are returned.
 )")
 );
-_FPX* WINAPI xll_array_index(_FPX* parray, LPOPER prows, LPOPER pcolumns)
+_FPX* WINAPI xll_array_index(_FPX* pa, LPOPER pr, LPOPER pc)
 {
 #pragma XLLEXPORT
 	static FPX a;
 
 	try {
-		unsigned r = prows->size();
-		unsigned c = pcolumns->size();
+		unsigned r = pr->size();
+		unsigned c = pc->size();
 
-		if (size(*parray) == 1) {
-			handle<FPX> h_(parray->array[0]);
+		if (size(*pa) == 1) {
+			handle<FPX> h_(pa->array[0]);
 			if (h_) {
-				parray = h_->get();
+				pa = h_->get();
 			}
 		}
 
-		if (prows->is_missing()) {
-			r = parray->rows;
+		if (pr->is_missing()) {
+			r = pa->rows;
 		}
-		if (pcolumns->is_missing()) {
-			c = parray->columns;
+		if (pc->is_missing()) {
+			c = pa->columns;
 		}
 
 		a.resize(r, c);
 
 		for (unsigned i = 0; i < r; ++i) {
-			unsigned ri = prows->is_missing() ? i : static_cast<unsigned>((*prows)[i].val.num);
+			unsigned ri = pr->is_missing() ? i : static_cast<unsigned>((*pr)[i].val.num);
 			for (unsigned j = 0; j < c; ++j) {
-				unsigned cj = pcolumns->is_missing() ? j : static_cast<unsigned>((*pcolumns)[j].val.num);
-				a(i, j) = index(*parray, ri, cj);
+				unsigned cj = pc->is_missing() ? j : static_cast<unsigned>((*pc)[j].val.num);
+				a(i, j) = index(*pa, ri, cj);
 			}
 		}
 	}
@@ -638,11 +643,11 @@ AddIn xai_array_mask(
 	.Category(CATEGORY)
 	.Documentation(R"(
 If <code>mask</code> is smaller than <code>array</code> then it is
-applied using cyclic indices. If <code>array</code> is a handle then
-the handle to the masked array is returned.
+applied using cyclic indices. If <code>array</code> has more than one
+row then the mask is applied to rows.
 )")
 );
-_FPX* WINAPI xll_array_mask(_FPX* pa, _FPX* pm)
+_FPX* WINAPI xll_array_mask(_FPX* pa, const _FPX* pm)
 {
 #pragma XLLEXPORT
 	static FPX a;
@@ -650,28 +655,16 @@ _FPX* WINAPI xll_array_mask(_FPX* pa, _FPX* pm)
 	try {
 		a = *pa;
 		FPX* _a = ptr(pa);
-		FPX* _m = ptr(pm);
-		if (_a->rows() == 1) {
-			ensure(_a->size() == _m->size());
-			int k = 0;
-			for (int j = 0; j < _m->size(); ++j) {
-				if ((*_m)[j]) {
-					(*_a)[k] = (*_a)[j];
-					++k;
-				}
-			}
-			_a->get()->columns = k;
+		const FPX* _m = ptr(pm);
+		if (_m) {
+			pm = _m->get();
+		}
+
+		if (_a) {
+			mask(_a->get(), pm);
 		}
 		else {
-			ensure(_a->columns() == _m->size());
-			int k = 0;
-			for (int j = 0; j < _m->size(); ++j) {
-				if ((*_m)[j]) {
-					for (int i = 0; i < _a->rows(); ++i) {
-						(*_a)(i, k) = (*_a)(i, j);
-					}
-				}
-			}
+			mask(a.get(), pm);
 		}
 	}
 	catch (const std::exception& ex) {
@@ -874,7 +867,7 @@ AddIn xai_array_diff(
 	Function(XLL_FPX, "xll_array_diff", "ARRAY.DIFF")
 	.Arguments({
 		Arg(XLL_FPX, "array", "is an array or handle to an array."),
-		Arg(XLL_CSTRING, "_op", "is an optional binary opertor to use. Default is minus.")
+		Arg(XLL_CSTRING, "_op", "is an optional binary operator to use. Default is minus.")
 		})
 	.FunctionHelp("Return adjacent differences of array.")
 	.Category(CATEGORY)
@@ -885,13 +878,10 @@ Return <code>{a0, op(a1,a0), op(a2, a1),...}</code>.
 _FPX* WINAPI xll_array_diff(_FPX* pa, xcstr op)
 {
 #pragma XLLEXPORT
-	unsigned na = size(*pa);
+	FPX* _a = ptr(pa);
 
-	if (na == 1) {
-		handle<FPX> _a(pa->array[0]);
-		if (_a) {
-			pa = _a->get();
-		}
+	if (_a) {
+		pa = _a->get();
 	}
 
 	if (!*op or *op == '-') {
@@ -900,6 +890,32 @@ _FPX* WINAPI xll_array_diff(_FPX* pa, xcstr op)
 	if (!*op or *op == '/') {
 		pa = xll::diff<std::divides<double>>(pa);
 	}
+
+	return pa;
+}
+
+AddIn xai_array_shift(
+	Function(XLL_FPX, "xll_array_shift", "ARRAY.SHIFT")
+	.Arguments({
+		Arg(XLL_FPX, "array", "is an array or handle to an array."),
+		Arg(XLL_LONG, "n", "is the number of elements to shift.")
+		})
+	.FunctionHelp("Return shifted array.")
+	.Category(CATEGORY)
+	.Documentation(R"xyzyx(
+If <code>n &gt; 0</code> then shift right. If <code>n &lt; 0</code> then shift left. 
+)xyzyx")
+);
+_FPX* WINAPI xll_array_shift(_FPX* pa, LONG n)
+{
+#pragma XLLEXPORT
+	FPX* _a = ptr(pa);
+
+	if (_a) {
+		pa = _a->get();
+	}
+
+	shift(pa, n);
 
 	return pa;
 }
