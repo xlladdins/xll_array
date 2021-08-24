@@ -388,7 +388,7 @@ _FPX* WINAPI xll_array_sequence(double start, double stop, double incr)
 }
 
 AddIn xai_array_drop(
-	Function(XLL_FPX, "xll_array_drop", "ARRAY.drop")
+	Function(XLL_FPX, "xll_array_drop", "ARRAY.DROP")
 	.Arguments({
 		Arg(XLL_FPX, "array", "is an array or handle to an array."),
 		Arg(XLL_LONG, "n", "is then number of items to drop."),
