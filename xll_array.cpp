@@ -919,3 +919,51 @@ _FPX* WINAPI xll_array_shift(_FPX* pa, LONG n)
 
 	return pa;
 }
+
+AddIn xai_array_acf(
+	Function(XLL_FPX, "xll_array_acf", "ARRAY.ACF")
+	.Arguments({
+		Arg(XLL_FPX, "array", "is an array or handle to an array."),
+		Arg(XLL_BOOL, "_correlation", "is an optional flag indicating correlations should be returned.")
+		})
+	.FunctionHelp("Return auto covariance of the array.")
+	.Category(CATEGORY)
+	.Documentation(R"xyzyx(
+)xyzyx")
+);
+_FPX* WINAPI xll_array_acf(_FPX* pa, BOOL corr)
+{
+#pragma XLLEXPORT
+	static FPX acf;
+
+	try {
+		FPX* _a = ptr(pa);
+		if (_a) {
+			pa = _a->get();
+		}
+
+		acf.resize(pa->rows, pa->columns);
+		double cov = 1;
+		for (unsigned i = 0; i < size(*pa); ++i) {
+			acf[i] = 0;
+			for (unsigned j = i; j < size(*pa); ++j) {
+				acf[i] += pa->array[i] * pa->array[j];
+			}
+			acf[i] /= acf.size() - i;
+			if (i == 0) {
+				cov = acf[0];
+			}
+			if (corr) {
+				acf[i] /= cov;
+			}
+		}
+	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
+	}
+	catch (...) {
+		XLL_ERROR(__FUNCTION__ ": unknown exception");
+	}
+
+	return acf.get();
+}
