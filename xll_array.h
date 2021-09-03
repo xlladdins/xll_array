@@ -16,6 +16,17 @@ namespace xll {
 
 		return nullptr;
 	}
+	inline const FPX* ptr(const _FPX* pa)
+	{
+		if (size(*pa) == 1) {
+			handle<FPX> _a(pa->array[0]);
+			if (_a) {
+				return _a.ptr();
+			}
+		}
+
+		return nullptr;
+	}
 
 	// take elements from front (n > 0) or back (n < 0) of array
 	inline _FPX* array_take(int n, _FPX* pa)

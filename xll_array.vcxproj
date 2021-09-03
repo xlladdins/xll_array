@@ -190,6 +190,7 @@
     <ClInclude Include="xll_array.h" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="AUDUSD.xlsx" />
     <None Include="README.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
