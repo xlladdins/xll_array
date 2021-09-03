@@ -8,14 +8,6 @@
 
 using namespace xll;
 
-HANDLEX handle_add;
-Auto<OpenAfter> xaoa_handles([] {
-	handle<fms::monoid<double>> add_(new fms::_monoid_add<double>{});
-	handle_add = add_.get();
-
-	return TRUE;
-});
-
 AddIn xai_monoid_add(
 	Function(XLL_HANDLEX, "xll_monoid_add", "MONOID.ADD")
 	.Arguments({})
@@ -25,7 +17,7 @@ AddIn xai_monoid_add(
 HANDLEX WINAPI xll_monoid_add()
 {
 #pragma XLLEXPORT
-	return handle_add;
+	return safe_handle<fms::monoid<double>>(&fms::monoid_add<double>);
 }
 
 AddIn xai_monoid_op(
@@ -41,7 +33,7 @@ AddIn xai_monoid_op(
 double WINAPI xll_monoid_op(HANDLEX op, double x, double y)
 {
 #pragma XLLEXPORT
-	handle<fms::monoid<double>> op_(op);
+	auto op_ = safe_pointer<fms::monoid<double>>(op);
 	if (op_) {
 		return (*op_)(x, y);
 	}

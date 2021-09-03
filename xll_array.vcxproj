@@ -184,6 +184,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="fms_moments.h" />
     <ClInclude Include="fms_op.h" />
     <ClInclude Include="fms_monoid.h" />
     <ClInclude Include="xll_array.h" />

@@ -6,6 +6,10 @@
 
 namespace fms {
 
+	inline const char monoid_doc[] = R"xyzyx(
+A <em>moniod</em> is a set with a binary operation
+that is associative and has an identity.
+)xyzyx";
 	template<class X>
 	struct monoid {
 		X operator()() const
@@ -21,39 +25,37 @@ namespace fms {
 		virtual X _op() const = 0;
 		virtual X _op(const X&, const X&) const = 0;
 	};
-	
+
 	template<class X>
-	struct _monoid_add : public monoid<X> {
-		constexpr _monoid_add() noexcept { }
-		constexpr ~_monoid_add() noexcept { }
+	class _monoid : public monoid<X> {
+		const nullop<X>& id;
+		const binop<X>& op;
+	public:
+		constexpr _monoid(const nullop<X>& id, const binop<X>& op) noexcept
+			: id(id), op(op)
+		{ }
+		constexpr ~_monoid() noexcept { }
 		X _op() const override
 		{
-			return nullop_zero<X>();
+			return id();
 		}
 		X _op(const X& x, const X& y) const override
 		{
-			return binop_add<X>(x, y);
+			return op(x, y);
 		}
 	};
-	template<class X>
-	inline constexpr auto monoid_add = _monoid_add<X>{};
 	
 	template<class X>
-	struct _monoid_mul : public monoid<X> {
-		constexpr _monoid_mul() noexcept { }
-		constexpr ~_monoid_mul() noexcept { }
-		X _op() const override
-		{
-			return nullop_one<X>();
-		}
-		X _op(const X& x, const X& y) const override
-		{
-			return binop_mul<X>(x, y);
-		}
-	};
+	constexpr auto monoid_add = _monoid<X>(nullop_zero<X>, binop_add<X>);
+
 	template<class X>
-	inline constexpr auto monoid_mul = _monoid_mul<X>{};
-	// sub, mul, ...
+	constexpr auto monoid_mul = _monoid<X>(nullop_one<X>, binop_mul<X>);
+	
+	template<class X>
+	constexpr auto monoid_max = _monoid<X>(nullop_max<X>, binop_max<X>);
+	
+	template<class X>
+	constexpr auto monoid_min = _monoid<X>(nullop_min<X>, binop_min<X>);
 
 	template<class X>
 	inline X fold(const monoid<X>& m)
@@ -110,6 +112,10 @@ namespace fms {
 		{
 			assert(monoid_add<X>() == 0);
 			assert(monoid_add<X>(1, 2) == 1 + 2);
+		}
+		{
+ 			auto u = monoid_max<X>();
+			assert(monoid_max<X>(u, X(1)) == X(1));
 		}
 		{
 			assert(fold<X>(monoid_add<X>) == 0);
