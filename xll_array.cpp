@@ -1,7 +1,6 @@
-// xll_array.cpp - Sample xll project.
+// xll_array.cpp - Array functions
 #include <cmath>
-//Uncomment to build for versions of Excel prior to 2007
-//#define XLOPERX XLOPER
+#include <numeric>
 #include "xll_array.h"
 
 #ifndef CATEGORY
@@ -920,6 +919,17 @@ _FPX* WINAPI xll_array_shift(_FPX* pa, LONG n)
 	return pa;
 }
 
+double cov(unsigned n, const double* x, const double* y, double x_, double y_)
+{
+	double c = 0;
+
+	for (unsigned i = 0; i < n; ++i) {
+		c += (x[i] - x_) * (y[i] - y_);
+	}
+
+	return c/n;
+}
+
 AddIn xai_array_acf(
 	Function(XLL_FPX, "xll_array_acf", "ARRAY.ACF")
 	.Arguments({
@@ -943,19 +953,32 @@ _FPX* WINAPI xll_array_acf(_FPX* pa, BOOL corr)
 		}
 
 		acf.resize(pa->rows, pa->columns);
-		double cov = 1;
-		for (unsigned i = 0; i < size(*pa); ++i) {
-			acf[i] = 0;
-			for (unsigned j = i; j < size(*pa); ++j) {
-				acf[i] += pa->array[i] * pa->array[j];
-			}
-			acf[i] /= acf.size() - i;
-			if (i == 0) {
-				cov = acf[0];
-			}
+		unsigned n = acf.size();
+
+		// (a[0] + ... a[n - i - 1])/(n - i)
+		double a_ = std::accumulate(begin(*pa), end(*pa), 0.) / n;
+		// (a[i] + ... + a[n-1])/(n - i)
+		double ai_ = a_;
+
+		acf[0] = cov(n, &pa->array[0], &pa->array[0], a_, a_);
+
+		// cov(a, a + i)
+		for (unsigned i = 1; i < n; ++i) {
+			a_ *= n - i + 1;
+			a_ -= pa->array[n - i];
+			a_ /= (n - i);
+
+			a_ *= n - i + 1;
+			a_ -= pa->array[i - 1];
+			a_ /= (n - i);
+
+			acf[i] = cov(n - i, &pa->array[0], &pa->array[i], a_, ai_);
 			if (corr) {
-				acf[i] /= cov;
+				acf[i] /= acf[0];
 			}
+		}
+		if (corr) {
+			acf[0] = 1;
 		}
 	}
 	catch (const std::exception& ex) {
