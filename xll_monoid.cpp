@@ -46,7 +46,7 @@ double WINAPI xll_monoid_op(HANDLEX op, double x, double y)
 		return (*op_)(x, y);
 	}
 
-	return std::numeric_limits<double>::quiet_NaN();
+	return XLL_NAN;
 }
 
 AddIn xai_monoid_scan(
@@ -69,5 +69,5 @@ double WINAPI xll_monoid_scan(HANDLEX op, double x)
 		return cc == 0 ? x : (*op_)(cc.as_num(), x);
 	}
 
-	return std::numeric_limits<double>::quiet_NaN();
+	return XLL_NAN;
 }

@@ -1,0 +1,18 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project>
+  <ProjectOutputs>
+    <ProjectOutput>
+      <FullPath>C:\Users\1009dev\Source\Repos\xlladdins\xll_array\x64\Release\xll_array.xll</FullPath>
+    </ProjectOutput>
+  </ProjectOutputs>
+  <ContentFiles>
+    <ContentFile>
+      <FullPath>C:\Users\1009dev\Source\Repos\xlladdins\xll_array\xll\docs\xll.xslt</FullPath>
+    </ContentFile>
+    <ContentFile>
+      <FullPath>C:\Users\1009dev\Source\Repos\xlladdins\xll_array\xll\docs\xll.css</FullPath>
+    </ContentFile>
+  </ContentFiles>
+  <SatelliteDlls />
+  <NonRecipeFileRefs />
+</Project>
