@@ -1,7 +1,0 @@
-﻿  fms_op.t.cpp
-     Creating library C:\Users\1009dev\Source\Repos\xlladdins\xll_array\x64\Release\xll_array.lib and object C:\Users\1009dev\Source\Repos\xlladdins\xll_array\x64\Release\xll_array.exp
-  Generating code
-  Previous IPDB not found, fall back to full compilation.
-  All 1443 functions were compiled because no usable IPDB/IOBJ from previous compilation was found.
-  Finished generating code
-  xll_array.vcxproj -> C:\Users\1009dev\Source\Repos\xlladdins\xll_array\x64\Release\xll_array.xll

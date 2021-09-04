@@ -17,7 +17,7 @@ AddIn xai_monoid_add(
 HANDLEX WINAPI xll_monoid_add()
 {
 #pragma XLLEXPORT
-	return safe_handle<fms::monoid<double>>(&fms::monoid_add<double>);
+	return safe_handle<const fms::monoid<double>>(&fms::monoid_add<double>);
 }
 
 AddIn xai_monoid_op(
