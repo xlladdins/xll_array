@@ -4,3 +4,7 @@
 
 /.vs
 /x64/Debug
+/Debug/xll_array.tlog
+/Debug
+/Release
+/x64/Release
