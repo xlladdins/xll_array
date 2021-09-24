@@ -11,6 +11,16 @@ using namespace xll;
 
 using xcstr = traits<XLOPERX>::xcstr;
 
+#ifdef _DEBUG
+xll_url_set xll_array_url("https://github.com/keithalewis/array");
+
+Auto<OpenAfter> xao_array_doc([] {
+
+	return xll::Documentation(CATEGORY, R"(Array functions.)");
+
+	});
+#endif // _DEBUG
+
 AddIn xai_array_(
 	Function(XLL_HANDLE, "xll_array_", "\\ARRAY")
 	.Arguments({
