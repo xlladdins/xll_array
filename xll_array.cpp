@@ -2,6 +2,12 @@
 #include <cmath>
 #include <numeric>
 #include "xll_array.h"
+#include "fms_iterable.h"
+
+int fms_iterable_iota_test_ = fms::iterable::iota_test();
+int fms_iterable_take_test_ = fms::iterable::take_test();
+//int fms_iterable_array_test_ = fms::iterable::array_test();
+int fms_iterable_iterator_test_ = fms::iterable::iterator_test();
 
 #ifndef CATEGORY
 #define CATEGORY "Array"

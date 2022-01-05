@@ -201,6 +201,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="fms_iterable.h" />
     <ClInclude Include="fms_moments.h" />
     <ClInclude Include="fms_op.h" />
     <ClInclude Include="fms_monoid.h" />
