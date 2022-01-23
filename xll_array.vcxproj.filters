@@ -66,6 +66,9 @@
     <ClCompile Include="xll_array_apply.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="xll_array_grade.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="xll_array.h">
@@ -84,5 +87,6 @@
   <ItemGroup>
     <None Include="README.md" />
     <None Include="AUDUSD.xlsx" />
+    <None Include="NOTES.md" />
   </ItemGroup>
 </Project>

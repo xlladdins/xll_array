@@ -187,6 +187,7 @@
     <ClCompile Include="xll_array_sort.cpp" />
     <ClCompile Include="xll_array_take.cpp" />
     <ClCompile Include="xll_array_unique.cpp" />
+    <ClCompile Include="xll_array_grade.cpp" />
     <ClCompile Include="xll_monoid.cpp">
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">true</ExcludedFromBuild>
       <ExcludedFromBuild Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">true</ExcludedFromBuild>
@@ -208,6 +209,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="AUDUSD.xlsx" />
+    <None Include="NOTES.md" />
     <None Include="README.md" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
