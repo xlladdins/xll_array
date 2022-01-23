@@ -40,6 +40,7 @@ _FPX* WINAPI xll_array_take(_FPX* pa, LONG n)
 
 	return a.get();
 }
+
 #ifdef _DEBUG
 
 _FPX* WINAPI xll_array_sequence(double start, double stop, double incr);
