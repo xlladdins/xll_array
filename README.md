@@ -5,7 +5,7 @@ This data type is only available for the ancient Excel C SDK but it provides
 much higher performance than the C#/VBA/Javascript APIs.
 A pointer to the array of numbers can be passed to C functions without copying the array.
 This library can create and manipulate in-memory arrays that have the same performance as native code.
-It can handle 2-d arrays upto 2<sup>31</sup> x 2<sup>31</sup>.
+It can handle 2-d arrays upto 2<sup>31</sup> &times; 2<sup>31</sup>.
 
 Most array functions can take either an array or a handle to an in-memory array.
 If a handle is given then the function operates on the in-memory array and returns the same handle.
