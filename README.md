@@ -1,4 +1,4 @@
-# Excel array functions
+# Excel [array](https://xlladdins.github.io/xll_array/) functions
 
 Excel has a data type for two dimensional arrays of floating point numbers.
 This data type is only available for the ancient Excel C SDK but it provides
