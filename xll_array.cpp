@@ -16,22 +16,27 @@ int fms_iterable_iterator_test_ = fms::iterable::iterator_test();
 using namespace xll;
 
 using xcstr = traits<XLOPERX>::xcstr;
-
 #ifdef _DEBUG
-xll_url_set xll_array_url("https://github.com/keithalewis/array");
 
-Auto<OpenAfter> xao_array_doc([] {
+int array_doc = []() {
+	Auto<Open> xao([]() {
+		xll_url_base::set("https://xlladdins.github.io/xll_array/");
+		return TRUE;
+		});
 
-	return xll::Documentation(CATEGORY, R"(Array functions.)");
+	Auto<OpenAfter> xao_array_doc([] {
+		return xll::Documentation(CATEGORY, R"(Array functions.)");
+		});
 
-	});
+	return TRUE;
+}();
 #endif // _DEBUG
 
 AddIn xai_array_(
 	Function(XLL_HANDLE, "xll_array_", "\\ARRAY")
 	.Arguments({
 		Arg(XLL_FP, "array", "is an array or handle to an array of numbers."),
-		Arg(XLL_WORD, "_columns", "is an optional number of columns. Default is 0."),
+		Arg(XLL_WORD, "_columns", "is an optional number of columns. Default is `."),
 		})
 	.Uncalced()
 	.FunctionHelp("Return a handle to the in-memory array.")
