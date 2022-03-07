@@ -91,5 +91,8 @@
     <None Include="README.md" />
     <None Include="AUDUSD.xlsx" />
     <None Include="NOTES.md" />
+    <None Include="docs\docs.bat">
+      <Filter>Source Files</Filter>
+    </None>
   </ItemGroup>
 </Project>

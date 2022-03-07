@@ -210,6 +210,7 @@
   </ItemGroup>
   <ItemGroup>
     <None Include="AUDUSD.xlsx" />
+    <None Include="docs\docs.bat" />
     <None Include="NOTES.md" />
     <None Include="README.md" />
   </ItemGroup>
