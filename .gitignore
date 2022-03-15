@@ -8,3 +8,9 @@
 /Debug
 /Release
 /x64/Release
+/x32/xll_array.exp
+/x32/xll_array.lib
+/x32/xll_array.pdb
+/x64/xll_array.exp
+/x64/xll_array.lib
+/x64/xll_array.pdb

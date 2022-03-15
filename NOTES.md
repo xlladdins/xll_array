@@ -1,3 +1,6 @@
 # NOTES
 
-Add covariance estimator for time series.
+xlladdins release
+
+batch build
+

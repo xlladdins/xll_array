@@ -4,10 +4,12 @@
 #include "xll_array.h"
 #include "fms_iterable.h"
 
+#ifdef _DEBUG
 int fms_iterable_iota_test_ = fms::iterable::iota_test();
 int fms_iterable_take_test_ = fms::iterable::take_test();
 //int fms_iterable_array_test_ = fms::iterable::array_test();
 int fms_iterable_iterator_test_ = fms::iterable::iterator_test();
+#endif _DEBUG
 
 #ifndef CATEGORY
 #define CATEGORY "Array"
@@ -18,13 +20,13 @@ using namespace xll;
 using xcstr = traits<XLOPERX>::xcstr;
 #ifdef _DEBUG
 
-int array_doc = []() {
-	Auto<Open> xao([]() {
-		xll_url_base::set("https://xlladdins.github.io/xll_array/");
-		return TRUE;
-		});
+Auto<Open> xao_array_doc([]() {
+	xll_url_base::set("https://xlladdins.github.io/xll_array/");
+	return TRUE;
+});
 
-	Auto<OpenAfter> xao_array_doc([] {
+int array_doc = []() {
+	Auto<OpenAfter> xaoa_array_doc([] {
 		return xll::Documentation(CATEGORY, R"(Array functions.)");
 		});
 
