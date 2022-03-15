@@ -124,6 +124,8 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <AdditionalOptions>/J /utf-8 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <Optimization>Disabled</Optimization>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -131,6 +133,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
     </Link>
     <PostBuildEvent>
       <Command>signtool.exe sign /tr http://timestamp.comodoca.com /fd sha256 /td sha256 /as /v /f ..\KALX.pfx /p K12mos@be $(TargetPath)</Command>
@@ -167,6 +170,9 @@
       <TreatWarningAsError>true</TreatWarningAsError>
       <AdditionalOptions>/J /utf-8 %(AdditionalOptions)</AdditionalOptions>
       <RuntimeLibrary>MultiThreaded</RuntimeLibrary>
+      <Optimization>Disabled</Optimization>
+      <FavorSizeOrSpeed>Neither</FavorSizeOrSpeed>
+      <WholeProgramOptimization>false</WholeProgramOptimization>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -174,6 +180,7 @@
       <OptimizeReferences>true</OptimizeReferences>
       <GenerateDebugInformation>true</GenerateDebugInformation>
       <EnableUAC>false</EnableUAC>
+      <LinkTimeCodeGeneration>Default</LinkTimeCodeGeneration>
     </Link>
     <PostBuildEvent>
       <Command>signtool.exe sign /tr http://timestamp.comodoca.com /fd sha256 /td sha256 /as /v /f ..\KALX.pfx /p K12mos@be $(TargetPath)</Command>
