@@ -12,14 +12,15 @@ namespace xll {
 	inline FPX* ptr(_FPX* pa)
 	{
 		if (size(*pa) == 1) {
-			handle<FPX> _a(pa->array[0]);
-			if (_a) {
-				return _a.ptr();
+			handle<FPX> a_(pa->array[0]);
+			if (a_) {
+				return a_.ptr();
 			}
 		}
 
 		return nullptr;
 	}
+	// const version of ptr
 	inline const FPX* ptr(const _FPX* pa)
 	{
 		if (size(*pa) == 1) {
