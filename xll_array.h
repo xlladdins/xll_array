@@ -1,6 +1,6 @@
 // xll_array.h - array functions
 #pragma once
-#include "xll/xll/xll.h"
+#include "xll24/include/xll.h"
 
 #ifndef CATEGORY
 #define CATEGORY "Array"
@@ -9,7 +9,7 @@
 namespace xll {
 
 	// underlying pointer if 1 x 1 and handle to FPX
-	inline FPX* ptr(_FPX* pa)
+	inline FPX* ptr(_FP12* pa)
 	{
 		if (size(*pa) == 1) {
 			handle<FPX> a_(pa->array[0]);
@@ -21,7 +21,7 @@ namespace xll {
 		return nullptr;
 	}
 	// const version of ptr
-	inline const FPX* ptr(const _FPX* pa)
+	inline const FPX* ptr(const _FP12* pa)
 	{
 		if (size(*pa) == 1) {
 			handle<FPX> _a(pa->array[0]);

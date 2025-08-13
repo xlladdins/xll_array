@@ -221,6 +221,11 @@
     <None Include="NOTES.md" />
     <None Include="README.md" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="xll24\xll.vcxproj">
+      <Project>{7d7375af-e7e3-42d3-a00f-d8ee22c39924}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

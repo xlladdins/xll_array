@@ -19,7 +19,7 @@ to guarantee all duplicate entries are removed.
 )xyzyx")
 .SeeAlso({ "ARRAY.SORT" })
 );
-_FPX* WINAPI xll_array_unique(_FPX* pa)
+_FP12* WINAPI xll_array_unique(_FP12* pa)
 {
 #pragma XLLEXPORT
 	FPX* _a = ptr(pa);

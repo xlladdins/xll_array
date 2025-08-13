@@ -17,25 +17,8 @@ int fms_iterable_iterator_test_ = fms::iterable::iterator_test();
 
 using namespace xll;
 
-using xcstr = traits<XLOPERX>::xcstr;
-#ifdef _DEBUG
-
-Auto<Open> xao_array_doc([]() {
-	xll_url_base::set("https://xlladdins.github.io/xll_array/");
-	return TRUE;
-});
-
-int array_doc = []() {
-	Auto<OpenAfter> xaoa_array_doc([] {
-		return xll::Documentation(CATEGORY, R"(Array functions.)");
-		});
-
-	return TRUE;
-}();
-#endif // _DEBUG
-
 AddIn xai_array_(
-	Function(XLL_HANDLE, "xll_array_", "\\ARRAY")
+	Function(XLL_HANDLEX, "xll_array_", "\\ARRAY")
 	.Arguments({
 		Arg(XLL_FP, "array", "is an array or handle to an array of numbers."),
 		Arg(XLL_WORD, "_columns", "is an optional number of columns. Default is `."),
@@ -55,7 +38,7 @@ has no side effects. If the first argument is a handle to an array then the func
 modifies the in-memory array and returns the array handle. 
 )")
 );
-HANDLEX WINAPI xll_array_(const _FPX* pa, WORD c)
+HANDLEX WINAPI xll_array_(const _FP12* pa, WORD c)
 {
 #pragma XLLEXPORT
 	HANDLEX h = INVALID_HANDLEX;
@@ -85,7 +68,7 @@ HANDLEX WINAPI xll_array_(const _FPX* pa, WORD c)
 AddIn xai_array_get(
 	Function(XLL_FP, "xll_array_get", "ARRAY")
 	.Arguments({
-		Arg(XLL_HANDLE, "handle", "is a handle to an array of numbers."),
+		Arg(XLL_HANDLEX, "handle", "is a handle to an array of numbers."),
 		Arg(XLL_BOOL, "_fast", "is an option boolean to specify fast lookup. Default is FALSE.")
 		})
 	.FunctionHelp("Return an array associated with handle.")
@@ -97,10 +80,10 @@ ensure the array was created by a previous call to <code>\ARRAY</code>.
 )")
 .SeeAlso({ "\\ARRAY" })
 );
-_FPX* WINAPI xll_array_get(HANDLEX h, BOOL fast)
+_FP12* WINAPI xll_array_get(HANDLEX h, BOOL fast)
 {
 #pragma XLLEXPORT
-	_FPX* pa = nullptr;
+	_FP12* pa = nullptr;
 
 	try {
 		handle<FPX> h_(h, !fast);
@@ -119,9 +102,9 @@ _FPX* WINAPI xll_array_get(HANDLEX h, BOOL fast)
 }
 
 AddIn xai_array_resize(
-	Function(XLL_FPX, "xll_array_resize", "ARRAY.RESIZE")
+	Function(XLL_FP, "xll_array_resize", "ARRAY.RESIZE")
 	.Arguments({
-		Arg(XLL_FPX, "array", "is an array or handle to an array."),
+		Arg(XLL_FP, "array", "is an array or handle to an array."),
 		Arg(XLL_LONG, "rows", "is the number of rows."),
 		Arg(XLL_LONG, "columns", "is the number of columns."),
 		})
@@ -133,7 +116,7 @@ If <code>array</code> is a handle this function resizes the in-memory array and
 returns its handle, otherwise the resized array is returned.
 )")
 );
-_FPX* WINAPI xll_array_resize(_FPX* pa, LONG r, LONG c)
+_FP12* WINAPI xll_array_resize(_FP12* pa, LONG r, LONG c)
 {
 #pragma XLLEXPORT
 	static FPX a;
@@ -161,7 +144,7 @@ _FPX* WINAPI xll_array_resize(_FPX* pa, LONG r, LONG c)
 AddIn xai_array_rows(
 	Function(XLL_LONG, "xll_array_rows", "ARRAY.ROWS")
 	.Arguments({
-		Arg(XLL_FPX, "array", "is an array or handle to an array."),
+		Arg(XLL_FP, "array", "is an array or handle to an array."),
 		})
 	.FunctionHelp("Return the number of rows of an array.")
 	.Category(CATEGORY)
@@ -169,7 +152,7 @@ AddIn xai_array_rows(
 Return the number of rows of an array.
 )")
 );
-LONG WINAPI xll_array_rows(_FPX* pa)
+LONG WINAPI xll_array_rows(_FP12* pa)
 {
 #pragma XLLEXPORT
 	LONG r = 0;
@@ -196,7 +179,7 @@ LONG WINAPI xll_array_rows(_FPX* pa)
 AddIn xai_array_columns(
 	Function(XLL_LONG, "xll_array_columns", "ARRAY.COLUMNS")
 	.Arguments({
-		Arg(XLL_FPX, "array", "is an array or handle to an array."),
+		Arg(XLL_FP, "array", "is an array or handle to an array."),
 		})
 	.FunctionHelp("Return the number of columns of an array.")
 	.Category(CATEGORY)
@@ -204,7 +187,7 @@ AddIn xai_array_columns(
 Return the number of columns of an array.
 )")
 );
-LONG WINAPI xll_array_columns(_FPX* pa)
+LONG WINAPI xll_array_columns(_FP12* pa)
 {
 #pragma XLLEXPORT
 	LONG c = 0;
@@ -231,7 +214,7 @@ LONG WINAPI xll_array_columns(_FPX* pa)
 AddIn xai_array_size(
 	Function(XLL_LONG, "xll_array_size", "ARRAY.SIZE")
 	.Arguments({
-		Arg(XLL_FPX, "array", "is an array or handle to an array."),
+		Arg(XLL_FP, "array", "is an array or handle to an array."),
 		})
 	.FunctionHelp("Return the size of an array.")
 	.Category(CATEGORY)
@@ -239,7 +222,7 @@ AddIn xai_array_size(
 Return the number of rows times the number of columns of an array.
 )")
 );
-LONG WINAPI xll_array_size(_FPX* pa)
+LONG WINAPI xll_array_size(_FP12* pa)
 {
 #pragma XLLEXPORT
 	LONG c = 0;
@@ -273,7 +256,7 @@ int xll_array_test()
 			a[0] = 2;
 
 			HANDLEX ha = to_handle<FPX>(&a);
-			_FPX* pa = xll_array_get(ha, true);
+			_FP12* pa = xll_array_get(ha, true);
 			ensure(pa->array[0] == 2);
 			ensure(pa->rows == 1);
 			ensure(xll_array_rows(pa) == 1);
@@ -281,7 +264,7 @@ int xll_array_test()
 			ensure(xll_array_columns(pa) == 1);
 			ensure(xll_array_size(pa) == 1);
 
-			_FPX* pb = xll_array_resize(pa, 2, 3);
+			_FP12* pb = xll_array_resize(pa, 2, 3);
 			ensure(pb->array[0] == 2);
 			ensure(pb->rows == 2);
 			ensure(xll_array_rows(pb) == 2);

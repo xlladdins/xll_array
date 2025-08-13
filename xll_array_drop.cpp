@@ -4,9 +4,9 @@
 using namespace xll;
 
 AddIn xai_array_drop(
-	Function(XLL_FPX, "xll_array_drop", "ARRAY.DROP")
+	Function(XLL_FP, "xll_array_drop", "ARRAY.DROP")
 	.Arguments({
-		Arg(XLL_FPX, "array", "is an array or handle to an array."),
+		Arg(XLL_FP, "array", "is an array or handle to an array."),
 		Arg(XLL_LONG, "n", "is then number of items to drop."),
 		})
 	.FunctionHelp("Drop items from front (n > 0) or back (n < 0) of array.")
@@ -16,7 +16,7 @@ Drop items from front (n > 0) or back (n < 0) of array
 If <code>array</code> has more than one row then drop <code>n</code> rows.
 )")
 );
-_FPX* WINAPI xll_array_drop(_FPX* pa, LONG n)
+_FP12* WINAPI xll_array_drop(_FP12* pa, LONG n)
 {
 #pragma XLLEXPORT
 	static FPX a;
@@ -42,7 +42,7 @@ _FPX* WINAPI xll_array_drop(_FPX* pa, LONG n)
 }
 #ifdef _DEBUG
 
-_FPX* WINAPI xll_array_sequence(double start, double stop, double incr);
+_FP12* WINAPI xll_array_sequence(double start, double stop, double incr);
 
 int xll_array_drop_test()
 {

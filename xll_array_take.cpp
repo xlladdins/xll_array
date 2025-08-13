@@ -4,9 +4,9 @@
 using namespace xll;
 
 AddIn xai_array_take(
-	Function(XLL_FPX, "xll_array_take", "ARRAY.TAKE")
+	Function(XLL_FP, "xll_array_take", "ARRAY.TAKE")
 	.Arguments({
-		Arg(XLL_FPX, "array", "is an array or handle to an array."),
+		Arg(XLL_FP, "array", "is an array or handle to an array."),
 		Arg(XLL_LONG, "n", "is then number of items to take."),
 		})
 		.FunctionHelp("Take items from front (n > 0) or back (n < 0) of array.")
@@ -16,7 +16,7 @@ Take items from front (n > 0) or back (n < 0) of array
 If <code>array</code> has more than one row then take <code>n</code> rows.
 )")
 );
-_FPX* WINAPI xll_array_take(_FPX* pa, LONG n)
+_FP12* WINAPI xll_array_take(_FP12* pa, LONG n)
 {
 #pragma XLLEXPORT
 	static FPX a;
@@ -43,7 +43,7 @@ _FPX* WINAPI xll_array_take(_FPX* pa, LONG n)
 
 #ifdef _DEBUG
 
-_FPX* WINAPI xll_array_sequence(double start, double stop, double incr);
+_FP12* WINAPI xll_array_sequence(double start, double stop, double incr);
 
 int xll_array_take_test()
 {

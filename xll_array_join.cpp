@@ -37,7 +37,7 @@ in reverse order more efficiently.
 )")
 .SeeAlso({ "\\ARRAY", "ARRAY.TAKE" })
 );
-_FPX* WINAPI xll_array_join(_FPX* pa1, _FPX* pa2)
+_FP12* WINAPI xll_array_join(_FP12* pa1, _FP12* pa2)
 {
 #pragma XLLEXPORT
 	static xll::FPX a;
@@ -66,7 +66,7 @@ _FPX* WINAPI xll_array_join(_FPX* pa1, _FPX* pa2)
 			a.resize((n + size(*pa2)) / a.columns(), a.columns());
 		}
 
-		std::copy(begin(*pa2), begin(*pa2) + a.size() - n, a.begin() + n);
+		std::copy(begin(*pa2), begin(*pa2) + a.size() - n, begin(a) + n);
 	}
 	catch (const std::exception& ex) {
 		XLL_ERROR(ex.what());
@@ -80,15 +80,15 @@ _FPX* WINAPI xll_array_join(_FPX* pa1, _FPX* pa2)
 
 #ifdef _DEBUG
 
-_FPX* WINAPI xll_array_sequence(double start, double stop, double incr);
-HANDLEX WINAPI xll_array_(const _FPX* pa, WORD c);
+_FP12* WINAPI xll_array_sequence(double start, double stop, double incr);
+HANDLEX WINAPI xll_array_(const _FP12* pa, WORD c);
 
 int xll_array_join_test()
 {
 	{
 		FPX a = *xll_array_sequence(1, 3, 1); // {1,2,3}
 		FPX b = *xll_array_sequence(4, 7, 1); // {4,5,6,7}
-		_FPX* pab = xll_array_join(a.get(), b.get());
+		_FP12* pab = xll_array_join(a.get(), b.get());
 		ensure(pab->rows == a.size() + b.size());
 		ensure(pab->columns == 1);
 		ensure(pab->array[0] == a[0]);

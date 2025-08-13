@@ -17,9 +17,9 @@ double cov(unsigned n, const double* x, const double* y, double x_, double y_)
 }
 
 AddIn xai_array_acf(
-	Function(XLL_FPX, "xll_array_acf", "ARRAY.ACF")
+	Function(XLL_FP, "xll_array_acf", "ARRAY.ACF")
 	.Arguments({
-		Arg(XLL_FPX, "array", "is an array or handle to an array."),
+		Arg(XLL_FP, "array", "is an array or handle to an array."),
 		Arg(XLL_BOOL, "_correlation", "is an optional flag indicating correlations should be returned.")
 		})
 	.FunctionHelp("Return auto covariance of the array.")
@@ -27,7 +27,7 @@ AddIn xai_array_acf(
 	.Documentation(R"xyzyx(
 )xyzyx")
 );
-_FPX* WINAPI xll_array_acf(_FPX* pa, BOOL corr)
+_FP12* WINAPI xll_array_acf(_FP12* pa, BOOL corr)
 {
 #pragma XLLEXPORT
 	static FPX acf;

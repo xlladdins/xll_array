@@ -1,6 +1,6 @@
 // xll_op.cpp - operators
 #include "fms_op.h"
-#include "xll/xll/xll.h"
+#include "xll_array.h"
 
 #ifndef CATEGORY
 #define CATEGORY "XLL"

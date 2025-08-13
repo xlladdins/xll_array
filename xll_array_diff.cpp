@@ -5,9 +5,9 @@
 using namespace xll;
 
 AddIn xai_array_diff(
-	Function(XLL_FPX, "xll_array_diff", "ARRAY.DIFF")
+	Function(XLL_FP, "xll_array_diff", "ARRAY.DIFF")
 	.Arguments({
-		Arg(XLL_FPX, "array", "is an array or handle to an array."),
+		Arg(XLL_FP, "array", "is an array or handle to an array."),
 		})
 	.FunctionHelp("Return adjacent differences of array.")
 	.Category(CATEGORY)
@@ -15,7 +15,7 @@ AddIn xai_array_diff(
 Return <code>{a0, a1 - a0, a2 - a1,...}</code>.
 )xyzyx")
 );
-_FPX* WINAPI xll_array_diff(_FPX* pa)
+_FP12* WINAPI xll_array_diff(_FP12* pa)
 {
 #pragma XLLEXPORT
 	FPX* _a = ptr(pa);

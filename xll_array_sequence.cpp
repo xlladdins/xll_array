@@ -18,7 +18,7 @@ If <code>_incr</code> is greater than 1 return <code>_incr</code> values
 from <code>start</code> to <code>stop</code>
 )")
 );
-_FPX* WINAPI xll_array_sequence(double start, double stop, double incr)
+_FP12* WINAPI xll_array_sequence(double start, double stop, double incr)
 {
 #pragma XLLEXPORT
 	static xll::FPX a;

@@ -14,7 +14,7 @@ AddIn xai_array_apply(
 	.Category(CATEGORY)
 	.Documentation(R"()")
 );
-_FPX* WINAPI xll_array_apply(LPOPER pf, _FPX* pa)
+_FP12* WINAPI xll_array_apply(LPOPER pf, _FP12* pa)
 {
 #pragma XLLEXPORT
 	FPX* _a = ptr(pa);
@@ -22,8 +22,8 @@ _FPX* WINAPI xll_array_apply(LPOPER pf, _FPX* pa)
 		pa = _a->get();
 	}
 
-	for (unsigned i = 0; i < size(*pa); ++i) {
-		pa->array[i] = Excel(xlUDF, *pf, OPER(pa->array[i])).as_num();
+	for (int i = 0; i < size(*pa); ++i) {
+		pa->array[i] = Num(Excel(xlUDF, *pf, pa->array[i]));
 	}
 
 	return pa;

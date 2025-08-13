@@ -25,7 +25,7 @@ increasing or decreasing, respecively.
 If <code>array</code> is a handle return a handle to the sorted array.
 )xyzyx")
 );
-_FPX* WINAPI xll_array_sort(_FPX* pa, LONG n)
+_FP12* WINAPI xll_array_sort(_FP12* pa, LONG n)
 {
 #pragma XLLEXPORT
 

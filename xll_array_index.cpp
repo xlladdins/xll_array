@@ -4,9 +4,9 @@
 using namespace xll;
 
 AddIn xai_array_index(
-	Function(XLL_FPX, "xll_array_index", "ARRAY.INDEX")
+	Function(XLL_FP, "xll_array_index", "ARRAY.INDEX")
 	.Arguments({
-		Arg(XLL_FPX, "array", "is a array or handle to a array."),
+		Arg(XLL_FP, "array", "is a array or handle to a array."),
 		Arg(XLL_LPOPER, "rows", "are an array of rows to return."),
 		Arg(XLL_LPOPER, "columns", "are an array of columns to return."),
 		})
@@ -18,14 +18,14 @@ If <code>rows</code> or <code>columns</code> are missing then all
 rows or columns are returned.
 )")
 );
-_FPX* WINAPI xll_array_index(_FPX* pa, LPOPER pr, LPOPER pc)
+_FP12* WINAPI xll_array_index(_FP12* pa, LPOPER pr, LPOPER pc)
 {
 #pragma XLLEXPORT
 	static FPX a;
 
 	try {
-		unsigned r = pr->size();
-		unsigned c = pc->size();
+		unsigned r = size(*pr);
+		unsigned c = size(*pc);
 
 		if (size(*pa) == 1) {
 			handle<FPX> h_(pa->array[0]);
@@ -34,19 +34,19 @@ _FPX* WINAPI xll_array_index(_FPX* pa, LPOPER pr, LPOPER pc)
 			}
 		}
 
-		if (pr->is_missing()) {
+		if (isMissing(*pr)) {
 			r = pa->rows;
 		}
-		if (pc->is_missing()) {
+		if (isMissing(*pc)) {
 			c = pa->columns;
 		}
 
 		a.resize(r, c);
 
 		for (unsigned i = 0; i < r; ++i) {
-			unsigned ri = pr->is_missing() ? i : static_cast<unsigned>((*pr)[i].val.num);
+			unsigned ri = isMissing(*pr) ? i : static_cast<unsigned>((*pr)[i].val.num);
 			for (unsigned j = 0; j < c; ++j) {
-				unsigned cj = pc->is_missing() ? j : static_cast<unsigned>((*pc)[j].val.num);
+				unsigned cj = isMissing(*pc) ? j : static_cast<unsigned>((*pc)[j].val.num);
 				a(i, j) = index(*pa, ri, cj);
 			}
 		}

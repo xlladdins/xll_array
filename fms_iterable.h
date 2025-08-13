@@ -65,7 +65,7 @@ namespace fms::iterable {
 		}
 		iota end() const
 		{
-			return iota(std::numeric_limits<T>::max());
+			return iota((std::numeric_limits<T>::max)());
 		}
 
 		explicit operator bool() const

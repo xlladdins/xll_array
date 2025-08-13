@@ -25,7 +25,7 @@ Note <code>ARRAY.INDEX(array, ARRAY.GRADE(array))</code> is the same as <code>AR
 <code>array</code> must not be a handle.
 )xyzyx")
 );
-_FPX* WINAPI xll_array_grade(_FPX* pa, LONG n)
+_FP12* WINAPI xll_array_grade(_FP12* pa, LONG n)
 {
 #pragma XLLEXPORT
 
@@ -36,24 +36,24 @@ _FPX* WINAPI xll_array_grade(_FPX* pa, LONG n)
 		n = std::clamp(n, -na, na);
 
 		a.resize(na, 1);
-		std::iota(a.begin(), a.end(), 0);
+		std::iota(begin(a), end(a), 0);
 
 		auto lt = [pa](double x, double y) { return pa->array[(size_t)x] < pa->array[(size_t)y];  };
 		auto gt = [pa](double x, double y) { return pa->array[(size_t)x] > pa->array[(size_t)y];  };
 
 		if (n == 0) {
-			std::sort(a.begin(), a.end(), lt);
+			std::sort(begin(a), end(a), lt);
 			n = na;
 		}
 		else if (n > 0) {
-			std::partial_sort(a.begin(), a.begin() + n, a.end(), lt);
+			std::partial_sort(begin(a), begin(a) + n, end(a), lt);
 		}
 		else if (n == -1) {
-			std::sort(a.begin(), a.end(), gt);
+			std::sort(begin(a), end(a), gt);
 			n = na;
 		}
 		else { // n < -1
-			std::partial_sort(a.begin(), a.begin() - n, a.end(), gt);
+			std::partial_sort(begin(a), begin(a) - n, end(a), gt);
 			n = -n;
 		}
 
