@@ -3,7 +3,7 @@
 #include "xll24/include/xll.h"
 
 #ifndef CATEGORY
-#define CATEGORY "Array"
+#define CATEGORY L"Array"
 #endif 
 
 namespace xll {

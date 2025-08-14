@@ -5,10 +5,10 @@
 #include "fms_iterable.h"
 
 #ifdef _DEBUG
-int fms_iterable_iota_test_ = fms::iterable::iota_test();
-int fms_iterable_take_test_ = fms::iterable::take_test();
+//int fms_iterable_iota_test_ = fms::iterable::iota_test();
+//int fms_iterable_take_test_ = fms::iterable::take_test();
 //int fms_iterable_array_test_ = fms::iterable::array_test();
-int fms_iterable_iterator_test_ = fms::iterable::iterator_test();
+//int fms_iterable_iterator_test_ = fms::iterable::iterator_test();
 #endif _DEBUG
 
 #ifndef CATEGORY
@@ -20,8 +20,7 @@ using namespace xll;
 AddIn xai_array_(
 	Function(XLL_HANDLEX, "xll_array_", "\\ARRAY")
 	.Arguments({
-		Arg(XLL_FP, "array", "is an array or handle to an array of numbers."),
-		Arg(XLL_WORD, "_columns", "is an optional number of columns. Default is `."),
+		Arg(XLL_FP, L"array", L"is an array or handle to an array of numbers."),
 		})
 	.Uncalced()
 	.FunctionHelp("Return a handle to the in-memory array.")
@@ -38,15 +37,15 @@ has no side effects. If the first argument is a handle to an array then the func
 modifies the in-memory array and returns the array handle. 
 )")
 );
-HANDLEX WINAPI xll_array_(const _FP12* pa, WORD c)
+HANDLEX WINAPI xll_array_(const _FP12* pa)
 {
 #pragma XLLEXPORT
 	HANDLEX h = INVALID_HANDLEX;
 
 	try {
-		if (c != 0) {
-			ensure(size(*pa) == 1 || !"\\ARRAY: first argument must be scalar if second argument is not zero");
-			handle<FPX> h_(new FPX(static_cast<unsigned>(pa->array[0]), c));
+		const FPX* _pa = ptr(pa);
+		if (_pa) {
+			handle<FPX> h_(new FPX(*_pa));
 			ensure(h_);
 			h = h_.get();
 		}
@@ -66,10 +65,9 @@ HANDLEX WINAPI xll_array_(const _FP12* pa, WORD c)
 }
 
 AddIn xai_array_get(
-	Function(XLL_FP, "xll_array_get", "ARRAY")
+	Function(XLL_FP, L"xll_array_get", L"ARRAY")
 	.Arguments({
-		Arg(XLL_HANDLEX, "handle", "is a handle to an array of numbers."),
-		Arg(XLL_BOOL, "_fast", "is an option boolean to specify fast lookup. Default is FALSE.")
+		Arg(XLL_HANDLEX, L"handle", L"is a handle to an array of numbers."),
 		})
 	.FunctionHelp("Return an array associated with handle.")
 	.Category(CATEGORY)
@@ -80,13 +78,13 @@ ensure the array was created by a previous call to <code>\ARRAY</code>.
 )")
 .SeeAlso({ "\\ARRAY" })
 );
-_FP12* WINAPI xll_array_get(HANDLEX h, BOOL fast)
+_FP12* WINAPI xll_array_get(HANDLEX h)
 {
 #pragma XLLEXPORT
 	_FP12* pa = nullptr;
 
 	try {
-		handle<FPX> h_(h, !fast);
+		handle<FPX> h_(h);
 		if (h_) {
 			pa = h_->get();
 		}
@@ -218,7 +216,7 @@ AddIn xai_array_size(
 		})
 	.FunctionHelp("Return the size of an array.")
 	.Category(CATEGORY)
-	.Documentation(R"(
+	.Documentation(LR"(
 Return the number of rows times the number of columns of an array.
 )")
 );
@@ -246,6 +244,38 @@ LONG WINAPI xll_array_size(_FP12* pa)
 	return c;
 }
 
+AddIn xai_array_flip(
+	Function(XLL_HANDLEX, "xll_array_flip", "ARRAY.FLIP")
+	.Arguments({
+		Arg(XLL_HANDLEX, "array", "is an array or handle to an array."),
+		Arg(XLL_INT, "i", "is the index to flip."),
+		})
+		.FunctionHelp("Set the i-th entry of an array.")
+	.Category(CATEGORY)
+	.Documentation(R"()")
+);
+HANDLEX WINAPI xll_array_flip(HANDLEX h, int i)
+{
+#pragma XLLEXPORT
+	//HANDLEX h_ = INVALID_HANDLEX;
+	try {
+		handle<FPX> h_(h);
+		if (h_) {
+			i = std::clamp(i, 0, h_->size() - 1);
+			double xi = h_->operator[](i);
+			h_->operator[](i) = 1 - xi;
+			h_ = h_.get();
+		}
+	}
+	catch (const std::exception& ex) {
+		XLL_ERROR(ex.what());
+	}
+	catch (...) {
+		XLL_ERROR(__FUNCTION__ ": unknown exception");
+	}
+	return h;
+}
+
 #ifdef _DEBUG
 
 int xll_array_test()
@@ -256,7 +286,7 @@ int xll_array_test()
 			a[0] = 2;
 
 			HANDLEX ha = to_handle<FPX>(&a);
-			_FP12* pa = xll_array_get(ha, true);
+			_FP12* pa = xll_array_get(ha);
 			ensure(pa->array[0] == 2);
 			ensure(pa->rows == 1);
 			ensure(xll_array_rows(pa) == 1);
@@ -281,7 +311,7 @@ int xll_array_test()
 
 	return TRUE;
 }
-Auto<OpenAfter> xaoa_array_test(xll_array_test);
+//Auto<OpenAfter> xaoa_array_test(xll_array_test);
 
 #endif // _DEBUG
 
