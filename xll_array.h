@@ -33,4 +33,11 @@ namespace xll {
 		return nullptr;
 	}
 
+	_FP12* take(_FP12* pa, int n)
+	{
+		if (pa) {
+			n = std::clamp(n, 0, size(*pa) - 1);
+		}
+		return pa;
+	}
 }
