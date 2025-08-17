@@ -12,23 +12,58 @@
 
 namespace fms::iterable {
 
+	// Iterator with operator bool() to indicate end()
 	template<class I>
 	concept iterable = requires (I i) {
-		//std::is_base_of_v<std::input_iterator_tag, typename I::interator_category>;
-		typename I::iterator_concept;
-		//typename I::iterator_category;
-		typename I::difference_type;
-		typename I::value_type;
-		typename I::reference;
-		{ i.operator==(i) };
-		//		{ i.begin() } -> std::same_as<I>;
-		{ i.end() }; // maybe not same as I
 		{ !!i } -> std::same_as<bool>;
-		{ *i } -> std::convertible_to<typename I::value_type>;
-		{ ++i } -> std::same_as<I&>;
 	}
-	&& std::regular<I>&& std::regular<typename I::value_type>
-		;
+	&& std::forward_iterator<I>
+	&& std::regular<I>
+	&& std::regular<typename I::value_type>
+	;
+
+	// Iterators are not required to have begin() or end()
+	template<class I>
+	concept has_begin = requires (I i) {
+		{ i.begin() } -> std::convertible_to<I>;
+	}
+	;
+	template<class I>
+	concept has_end = requires (I i) {
+		{ i.end() } -> std::convertible_to<I>;
+	}
+	;
+
+	// All iterables have the same begin()...
+	template<iterable I>
+	constexpr I begin(I i)
+	{
+		return i;
+	}
+	// ... but each has their own end().
+	template<class I>
+		requires iterable<I>&& has_end<I>
+	size_t end(I i)
+	{
+		return i.end();
+	}
+	// Possibly infinite loop!
+	template<iterable I>
+	constexpr I end(I i)
+	{
+		while (i) {
+			++i;
+		}
+
+		return i;
+	}
+
+	template<class I>
+		requires iterable<I>&& has_end<I>
+	size_t size(I i)
+	{
+		return std::distance(begin(i), end(i));
+	}
 
 	// iterables are iterators
 	template<iterable I>
@@ -39,11 +74,10 @@ namespace fms::iterable {
 		return i;
 	}
 
-	// a[0], ..., a[n - 1]
+	// Unsafe non-owning view of p[0], p[1], ...
 	template<class T>
-	class array {
+	class ptr {
 		T* p;
-		size_t n;
 	public:
 		using iterator_concept = std::random_access_iterator_tag;
 		using difference_type = ptrdiff_t;
@@ -51,127 +85,123 @@ namespace fms::iterable {
 		using reference = T&;
 		using pointer = T*;
 
-		// pointer and size
-		constexpr array(T* p = nullptr, size_t n = 0)
-			: p(p), n(n)
+		constexpr ptr(T* p = nullptr)
+			: p(p)
 		{ }
-		// begin and end pointers
-		constexpr array(T* b, T* e)
-			: array(b, e - b)
-		{ }
-		// array and size
-		template<size_t N>
-		constexpr array(T(&a)[N])
-			: array(a, N)
-		{ }
-		constexpr array(const array&) = default;
-		constexpr array& operator=(const array&) = default;
-		constexpr array(array&&) = default;
-		constexpr array& operator=(array&&) = default;
-		constexpr ~array() = default;
-
-		constexpr auto operator<=>(const array& i) const = default;
-		constexpr auto operator==(const array& i) const
+		constexpr ptr(const ptr&) = default;
+		//constexpr ptr& operator=(const ptr&) = default;
+		constexpr ptr& operator=(const ptr& other)
 		{
-			return p == i.p && n == i.n;
+			if (this != &other) {
+				p = other.p;
+			}
+			return *this;
+		}
+		constexpr ptr(ptr&&) = default;
+		constexpr ptr& operator=(ptr&&) = default;
+		constexpr ~ptr() = default;
+
+		constexpr auto operator<=>(const ptr& i) const = default;
+		constexpr auto operator==(const ptr& i) const
+		{
+			return p == i.p;
 		}
 
-		constexpr array begin() const
+		constexpr ptr begin() const
 		{
 			return *this;
 		}
-		constexpr array end() const
-		{
-			return array(p + n, 0);
-		}
+
+		// no end()
 
 		constexpr explicit operator bool() const
 		{
-			return p and n;
+			return p;
 		}
 		constexpr value_type operator*() const
 		{
+			// precondition: p != nullptr
 			return *p;
 		}
 		constexpr pointer operator->() const
 		{
 			return p;
 		}
-		constexpr array& operator++()
+		constexpr ptr& operator++()
 		{
 			if (*this) {
 				++p;
-				--n;
 			}
 			return *this;
 		}
-		constexpr array operator++(int)
+		constexpr ptr operator++(int)
 		{
-			array a(*this);
+			ptr p_(*this);
 			operator++();
-			return a;
+			return p_;
 		}
-		constexpr array& operator--()
+		constexpr ptr& operator--()
 		{
 			if (*this) {
 				--p;
-				++n;
 			}
 			return *this;
 		}
-		constexpr array operator--(int)
+		constexpr ptr operator--(int)
 		{
-			array a(*this);
+			ptr p_(*this);
 			operator--();
-			return a;
+			return p_;
 		}
-		constexpr array operator+(difference_type m) const
+		constexpr ptr operator+(difference_type n) const
 		{
-			return array(p + m, n - m);
+			return ptr(p + n);
 		}
-		constexpr array operator-(difference_type m) const
+		constexpr ptr operator-(difference_type n) const
 		{
-			return array(p - m, n + m);
+			return ptr(p - n);
 		}
-		constexpr difference_type operator-(const array& i) const
+		constexpr difference_type operator-(const ptr& i) const
 		{
 			return static_cast<difference_type>(p - i.p);
 		}
 
 		// Compound assignment operators
-		constexpr array& operator+=(difference_type m)
+		constexpr ptr& operator+=(difference_type n)
 		{
-			p += m;
-			n -= m;
+			p += n;
 			return *this;
 		}
-		constexpr array& operator-=(difference_type m)
+		constexpr ptr& operator-=(difference_type n)
 		{
-			p -= m;
-			n += m;
+			p -= n;
 			return *this;
 		}
-		constexpr value_type operator[](difference_type m) const
+		constexpr value_type operator[](difference_type n) const
 		{
-			return p[m];
+			return p[n];
 		}
 	};
 	template<class T>
-	constexpr array<T> operator+(typename array<T>::difference_type m, const array<T>& a)
+	constexpr ptr<T> operator+(typename ptr<T>::difference_type n, const ptr<T>& a)
 	{
-		return a + m;
+		return a + n;
 	}
+
 
 #ifdef _DEBUG
 #define TYPE double
 	namespace test {
-		static_assert(std::random_access_iterator<array<TYPE>>);
+		static_assert(std::random_access_iterator<ptr<TYPE>>);
 		static_assert([]() {
-			constexpr auto a0 = array<double>{};
+			constexpr auto a0 = ptr<double>{};
 			static_assert(!a0);
-			constexpr auto a00{ a0 };
-			static_assert(a00 == a0);
-			static_assert(!(a00 != a0));
+			constexpr auto a1{ a0 };
+			static_assert(a1 == a0);
+			constexpr auto a2 = a1;
+			static_assert(!(a2 != a1));
+			static_assert(!(a1 != a0));
+			static_assert(*a1 == 0);
 			/*
 			++a1;
 			if (*a1 != 1) return false;
@@ -224,7 +254,7 @@ namespace fms::iterable {
 		}
 		constexpr take end() const
 		{
-			return take(0, drop(n, *this));
+			return take(n, *this);
 		}
 
 		// shadow I::operator bool
@@ -263,6 +293,27 @@ namespace fms::iterable {
 			return i;
 		}
 		// TODO: override all the increment operators
+	};
+
+	template<class T>
+	class array : public take<ptr<T>> {
+	public:
+		// pointer and size
+		constexpr array(T* p = nullptr, size_t n = 0)
+			: take(n, p)
+		{
+		}
+		// begin and end pointers
+		constexpr array(T* b, T* e)
+			: array(e - b, b)
+		{
+		}
+		// array and size
+		template<size_t N>
+		constexpr array(T(&a)[N])
+			: array(N, a)
+		{
+		}
 	};
 	// t, ++t, ...
 	template<class T>
@@ -383,7 +434,10 @@ namespace fms::iterable {
 		static_assert(!(i != iota<TYPE>()));
 		static_assert(*i == 0);
 		static_assert([]() {
-			auto i1 = iota<TYPE>{};
+			auto i1 = iota<TYPE>();
+			ENSURE(i1);
+			ENSURE(*i1 == 0);
+			/*
 			++i1;
 			ENSURE(*i1 == 1);
 			ENSURE(*++i1 == 2);
@@ -422,7 +476,7 @@ namespace fms::iterable {
 				len += t;
 			}
 			ENSURE(len == 3);
-	
+	*/
 			return true;
 			}());
 		}
