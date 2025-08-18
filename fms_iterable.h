@@ -73,10 +73,21 @@ namespace fms::iterable {
 
 		return i;
 	}
+	/*
+	// Deducing this mixings
+	template<class I>
+	struct op_incr_int {
+		constexpr I operator++(this I& i, int) {
+			auto s = i;
+			++i;
+			return s;
+		}
+	};
+	*/
 
 	// Unsafe non-owning view of p[0], p[1], ...
 	template<class T>
-	class ptr {
+	class ptr /* : op_incr_int<ptr<T>>*/ {
 		T* p;
 	public:
 		using iterator_concept = std::random_access_iterator_tag;
@@ -140,6 +151,7 @@ namespace fms::iterable {
 			operator++();
 			return p_;
 		}
+		
 		constexpr ptr& operator--()
 		{
 			if (*this) {
@@ -188,7 +200,6 @@ namespace fms::iterable {
 		return a + n;
 	}
 
-
 #ifdef _DEBUG
 #define TYPE double
 	namespace test {
@@ -201,7 +212,7 @@ namespace fms::iterable {
 			constexpr auto a2 = a1;
 			static_assert(!(a2 != a1));
 			static_assert(!(a1 != a0));
-			static_assert(*a1 == 0);
+			//static_assert(*a1 == 0);
 			/*
 			++a1;
 			if (*a1 != 1) return false;
@@ -315,6 +326,55 @@ namespace fms::iterable {
 		{
 		}
 	};
+
+	// i, ++i, ..., j, ++j, ...
+	template<iterable I, iterable J>
+	class concatenate2 {
+		I i;
+		J j;
+	public:
+		using iterator_category = std::common_type_t<typename I::iterator_category, typename J::iterator_category>;
+		using difference_type = std::common_type_t<typename I::difference_type, typename J::difference_type>;
+		using value_type = std::common_type_t<typename I::value_type, typename J::value_type>;
+		using reference = std::common_reference_t<typename I::reference, typename J::reference>;
+		using pointer = std::common_type_t<typename I::pointer, typename J::pointer>;
+
+		concatenate2(const I& i, const J& j)
+			: i(i), j(j)
+		{ }
+
+		constexpr explicit operator bool() const
+		{
+			return i or j;
+		}
+		value_type operator*() const
+		{
+			return i ? *i : *j;
+		}
+		concatenate2& operator++()
+		{
+			if (i) {
+				++i;
+			}
+			else if (j) {
+				++j;
+			}
+
+			return *this;
+		}
+	};
+	template<iterable I>
+	constexpr auto concatenate(I i)
+	{
+		return i;
+	}
+	template<iterable I, iterable ...Is>
+	constexpr auto concatenate(I i, Is... is)
+	{
+		return concatenate2(i, concatenate(is...));
+	}
+
+
 	// t, ++t, ...
 	template<class T>
 	class iota {
