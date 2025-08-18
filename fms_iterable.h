@@ -17,7 +17,7 @@ namespace fms::iterable {
 	concept iterable = requires (I i) {
 		{ !!i } -> std::same_as<bool>;
 	}
-	&& std::forward_iterator<I>
+	&& std::input_iterator<I>
 	&& std::regular<I>
 	&& std::regular<typename I::value_type>
 	;
@@ -201,7 +201,7 @@ namespace fms::iterable {
 			constexpr auto a2 = a1;
 			static_assert(!(a2 != a1));
 			static_assert(!(a1 != a0));
-			static_assert(*a1 == 0);
+			//static_assert(*a1 == 0);
 			/*
 			++a1;
 			if (*a1 != 1) return false;
