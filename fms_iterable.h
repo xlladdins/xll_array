@@ -12,6 +12,12 @@
 
 namespace fms::iterable {
 
+#ifdef _DEBUG
+	namespace test {
+		// test iterator
+	}
+#endif // _DEBUG
+
 	// Iterator with operator bool() to indicate it can be dereferenced.
 	template<class I>
 	concept iterable = requires (I i) {
@@ -58,11 +64,71 @@ namespace fms::iterable {
 		return i;
 	}
 
+	template<iterable I>
+		requires std::bidirectional_iterator<I> and has_end<I>
+	constexpr I back(I i)
+	{
+		return i ? --i.end() : i;
+	}
+	// potentially infinite!
+	template<iterable I>
+	constexpr I last(I i)
+	{
+		I l = i;
+		while (i) {
+			l = i;
+			++i;
+		}
+
+		return l;
+	}
+
 	template<class I>
 		requires iterable<I>&& has_end<I>
 	size_t size(I i)
 	{
 		return std::distance(begin(i), end(i));
+	}
+	// potentially infinite!
+	template<iterable I>
+	constexpr I size(I i, size_t n = 0)
+	{
+		while (i) {
+			++n;
+			++i;
+		}
+
+		return n;
+	}
+
+	template<iterable I, iterable J>
+		requires std::common_with<typename I::value_type, typename J::value_type>
+	constexpr auto compare(I i, J j)
+	{
+		while (i and j) {
+			if (*i != *j) {
+				return *i <=> *j;
+			}
+			++i;
+			++j;
+		}
+
+		return !i <=> !j; // both iterators are at the end
+	}
+
+	template<iterable I, iterable J>
+		requires std::common_with<typename I::value_type, typename J::value_type>
+	constexpr bool equal(I i, J j)
+	{
+		while (i and j) {
+			if (*i != *j) {
+				return false;
+			}
+			++i;
+			++j;
+		}
+
+		return !i and !j; // both iterators are at the end
 	}
 
 	// iterables are iterators
@@ -85,6 +151,169 @@ namespace fms::iterable {
 	};
 	*/
 
+	template<class T, size_t N>
+	class array {
+		std::array<T, N> a;
+		size_t i; // current index
+	public:
+		using iterator_concept = std::contiguous_iterator_tag;
+		using difference_type = ptrdiff_t;
+		using value_type = T;
+		using reference = T&;
+		using pointer = T*;
+
+		constexpr array() = default;
+		constexpr array(T(&a)[N])
+			: a(a, N), i(0)
+		{ }
+		constexpr array(const array&) = default;
+		constexpr array& operator=(const array&) = default;
+
+		constexpr auto operator<=>(const array&) const = default;
+		constexpr auto operator==(const array& other) const
+		{
+			return i == other.i && a == other.a;
+		}
+
+		constexpr operator bool() const
+		{
+			return i < N;
+		}
+
+		constexpr value_type operator*() const
+		{
+			return a[i];
+		}
+		constexpr reference operator* ()
+		{
+			return a[i];
+		}
+		// Required for `std::ranges::iter_move`
+		friend T&& iter_move(const array& it) 
+		{
+			return std::move(it.operator*());
+		}		
+		constexpr pointer operator->() const
+		{
+			return &a[i];
+		}
+		constexpr array& operator++()
+		{
+			if (i < N) {
+				++i;
+			}	
+
+			return *this;
+		}
+		constexpr array operator++(int)
+		{
+			array a_(*this);
+			operator++();
+		
+			return a_;
+		}
+
+		// bidirectional
+		constexpr array& operator--()
+		{
+			if (i > 0) {
+				--i;
+			}
+
+			return *this;
+		}
+		constexpr array operator--(int)
+		{
+			array a_(*this);
+			operator--();
+
+			return a_;
+		}
+
+		// random access
+		constexpr array& operator+=(difference_type n)
+		{
+			i += n;
+			if (i >= N) {
+				i = N; // end
+			}
+
+			return *this;
+		}
+		constexpr array operator+(difference_type n) const
+		{
+			array a_(*this);
+			a_ += n;
+
+			return a_;
+		}
+		constexpr array& operator-=(difference_type n)
+		{
+			i -= n;
+			if (i < 0) {
+				i = 0; // begin
+			}
+
+			return *this;
+		}
+		constexpr array operator-(difference_type n) const
+		{
+			array a_(*this);
+			a_ -= n;
+
+			return a_;
+		}
+		constexpr difference_type operator-(const array& other) const
+		{
+			return static_cast<difference_type>(i - other.i);
+		}
+	};
+	template<class T, size_t N>
+	constexpr array<T, N> operator+(ptrdiff_t n, const array<T, N>& a)
+	{
+		return a + n;
+	}
+	//static_assert(std::random_access_iterator<array<int, 3>>);
+
+	// *i, *++i, ..., (i = i0) *i, ++i, ...	
+	template<iterable I>
+		requires std::forward_iterator<I> and has_end<I>
+	class cycle {
+		I i;
+		I i0;
+	public:
+		using iterator_concept = typename I::iterator_concept;
+		using difference_type = typename I::difference_type;
+		using value_type = typename I::value_type;
+		using reference = typename I::reference;
+		using pointer = typename I::pointer;
+
+		cycle(I&& i)
+			: i(i), i0(i)
+		{
+		}
+
+		constexpr operator bool() const
+		{
+			return i0; // false if i in constructor is false
+		}
+		value_type operator*() const
+		{
+			return *i;
+		}
+		cycle& operator++()
+		{
+			if (i) {
+				++i;
+			}
+			if (!i) {
+				i = i0; // reset to the beginning
+			}
+
+			return *this;
+		}
+	};
+
 	// Only *i satisfying p(*i)
 	template<class P, iterable I>
 	class filter {
@@ -92,8 +321,15 @@ namespace fms::iterable {
 		I i;
 		void incr()
 		{
-			while (i && !f(*i)) {
+			while (i and !f(*i)) {
 				++i;
+			}
+		}
+		void decr()
+			requires std::bidirectional_iterator<I>
+		{
+			while (i and !p(*i)) {
+				--i;
 			}
 		}
 	public:
@@ -119,10 +355,13 @@ namespace fms::iterable {
 		}
 		filter& operator++()
 		{
-			if (i) {
-				++i;
-				incr();
-			}
+			incr(++i);
+
+			return *this;
+		}
+		filter& operator--()
+		{
+			decr(--i);
 
 			return *this;
 		}
@@ -504,25 +743,27 @@ namespace fms::iterable {
 	};
 
 	template<class T>
-	class array : public take<ptr<T>> {
+	class vector : public take<ptr<T>> {
 	public:
 		// pointer and size
-		constexpr array(T* p = nullptr, size_t n = 0)
+		constexpr vector(T* p = nullptr, size_t n = 0)
 			: take(n, p)
 		{
 		}
 		// begin and end pointers
-		constexpr array(T* b, T* e)
-			: array(e - b, b)
+		constexpr vector(T* b, T* e)
+			: vector(e - b, b)
 		{
 		}
 		// array and size
 		template<size_t N>
-		constexpr array(T(&a)[N])
-			: array(N, a)
+		constexpr vector(T(&a)[N])
+			: vector(N, a)
 		{
 		}
 	};
+
+	// catenate2(i, j) is (i, j)
 
 	// i, ++i, ..., j, ++j, ...
 	template<iterable I, iterable J>
