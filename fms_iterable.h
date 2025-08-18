@@ -85,6 +85,55 @@ namespace fms::iterable {
 	};
 	*/
 
+	// Only *i satisfying p(*i)
+	template<class P, iterable I>
+	class filter {
+		P p;
+		I i;
+		void incr()
+		{
+			while (i && !f(*i)) {
+				++i;
+			}
+		}
+	public:
+		using iterator_concept = typename I::iterator_concept;
+		using difference_type = typename I::difference_type;
+		using value_type = typename I::value_type;
+		using reference = typename I::reference;
+		using pointer = typename I::pointer;
+
+		filter(P&& p, I i)
+			: P(std::forward<P>(p)), i(i)
+		{
+			incr();
+		}
+
+		explicit operator bool() const
+		{
+			return i;
+		}
+		value_type operator*() const
+		{
+			return *i;
+		}
+		filter& operator++()
+		{
+			if (i) {
+				++i;
+				incr();
+			}
+
+			return *this;
+		}
+	};
+
+	class slice_filter {
+		ptrdiff_t offset;
+		size_t size;
+		ptrdiff_t step = 1;
+	};
+
 	template<iterable I>
 	class slice {
 		I i;
@@ -92,7 +141,14 @@ namespace fms::iterable {
 		size_t size;
 		ptrdiff_t step = 1;
 	public:
-		constexpr slice(I i, ptrdiff_t offset = 0, size_t size = 0, ptrdiff_t step = 1)
+		using iterator_concept = typename I::iterator_concept;
+		using difference_type = typename I::difference_type;
+		using value_type = typename I::value_type;
+		using reference = typename I::reference;
+		using pointer = typename I::pointer;
+
+		// slice(i) is effectively i
+		constexpr slice(I i, ptrdiff_t offset = 0, size_t size = (std::numeric_limits<size_t>::max)(), ptrdiff_t step = 1)
 			: i(i), offset(offset), size(size), step(step)
 		{
 			std::advance(i, offset);
@@ -127,14 +183,100 @@ namespace fms::iterable {
 				std::advance(i, step);
 			}
 			return *this;
-		}
-		
+		}	
 		constexpr slice operator++(int)
 		{
 			slice s(*this);
 			operator++();
 
 			return s;
+		}
+		// TODO: override all the increment operators
+	};
+
+	// I when M is true
+	template<iterable I, iterable M>
+	class mask {
+		I i;
+		M m;
+		void incr()
+		{
+			while (m && *m) {
+				if (i) {
+					++i;
+					++m;
+				}
+				else {
+					break;
+				}
+			}
+		}
+	public:
+		using iterator_concept = typename I::iterator_concept;
+		using difference_type = typename I::difference_type;
+		using value_type = typename I::value_type;
+		using reference = typename I::reference;
+		using pointer = typename I::pointer;
+
+		mask(I i, M m)
+			: i(i), m(m)
+		{
+			incr();
+		}
+
+		explicit operator bool() const
+		{
+			return i and m;
+		}
+		value_type operator*() const
+		{
+			return *i;
+		}
+		mask& operator++()
+		{
+			if (m) {
+				++m;
+				incr();
+			}
+			return *this;
+		}
+	};
+
+	// I[J]
+	template<iterable I, iterable J>
+	class indexed {
+		I i;
+		J j;
+	public:
+		indexed(const I& i, const J& j)
+			: i(i), j(j)
+		{
+			if (this->j) {
+				auto k = *j;
+				while (k--) {
+					if (i) {
+						++i;
+					}
+					else {
+						break;
+					}
+				}
+			}
+		}
+
+		auto operator<=>(const indexed&) const = default;
+		auto operator==(const indexed& other) const
+		{
+			return i == other.i && j == other.j;
+		}
+
+		explicit operator bool() const
+		{
+			return i and j;
+		}
+		indexed& operator++()
+		{
+			return *this;
 		}
 	};
 
