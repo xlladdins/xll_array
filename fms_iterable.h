@@ -12,7 +12,7 @@
 
 namespace fms::iterable {
 
-	// Iterator with operator bool() to indicate end()
+	// Iterator with operator bool() to indicate it can be dereferenced.
 	template<class I>
 	concept iterable = requires (I i) {
 		{ !!i } -> std::same_as<bool>;
@@ -84,6 +84,59 @@ namespace fms::iterable {
 		}
 	};
 	*/
+
+	template<iterable I>
+	class slice {
+		I i;
+		ptrdiff_t offset;
+		size_t size;
+		ptrdiff_t step = 1;
+	public:
+		constexpr slice(I i, ptrdiff_t offset = 0, size_t size = 0, ptrdiff_t step = 1)
+			: i(i), offset(offset), size(size), step(step)
+		{
+			std::advance(i, offset);
+		}
+		constexpr auto operator<=>(const slice&) const = default;
+		constexpr auto operator==(const slice& s) const
+		{
+			return offset == s.offset && size == s.size && step == s.step && i == s.i;
+		}
+		constexpr slice begin() const
+		{
+			return *this;
+		}
+		constexpr slice end() const
+		{
+			return slice(i, offset + size * step, 0, step);
+		}
+		constexpr explicit operator bool() const
+		{
+			return size > 0 and i;
+		}
+		
+		constexpr auto operator*() const
+		{
+			return *i;
+		}
+		
+		constexpr slice& operator++()
+		{
+			if (size > 0) {
+				size--;
+				std::advance(i, step);
+			}
+			return *this;
+		}
+		
+		constexpr slice operator++(int)
+		{
+			slice s(*this);
+			operator++();
+
+			return s;
+		}
+	};
 
 	// Unsafe non-owning view of p[0], p[1], ...
 	template<class T>
@@ -199,11 +252,13 @@ namespace fms::iterable {
 	{
 		return a + n;
 	}
+	static_assert(std::random_access_iterator<ptr<int>>);
+	static_assert(std::random_access_iterator<ptr<unsigned char>>);
+	static_assert(std::random_access_iterator<ptr<float>>);
 
 #ifdef _DEBUG
 #define TYPE double
 	namespace test {
-		static_assert(std::random_access_iterator<ptr<TYPE>>);
 		static_assert([]() {
 			constexpr auto a0 = ptr<double>{};
 			static_assert(!a0);
@@ -339,19 +394,28 @@ namespace fms::iterable {
 		using reference = std::common_reference_t<typename I::reference, typename J::reference>;
 		using pointer = std::common_type_t<typename I::pointer, typename J::pointer>;
 
-		concatenate2(const I& i, const J& j)
+		constexpr concatenate2(const I& i, const J& j)
 			: i(i), j(j)
 		{ }
+
+		constexpr auto begin() const
+		{
+			return *this;
+		}
+		constexpr auto end() const
+		{
+			return concatenate2(i.end(), j.end());
+		}
 
 		constexpr explicit operator bool() const
 		{
 			return i or j;
 		}
-		value_type operator*() const
+		constexpr value_type operator*() const
 		{
 			return i ? *i : *j;
 		}
-		concatenate2& operator++()
+		constexpr concatenate2& operator++()
 		{
 			if (i) {
 				++i;
@@ -362,7 +426,38 @@ namespace fms::iterable {
 
 			return *this;
 		}
+		constexpr concatenate2 operator++(int)
+		{
+			concatenate2 c(*this);
+			operator++();
+
+			return c;
+		}
+
+		constexpr concatenate2& operator--()
+			requires std::bidirectional_iterator<iterator_category>
+		{
+			if (i or *this == j.begin()) {
+				--i;
+			}
+			else {
+				--j;
+			}
+
+			return *this;
+		}
+		constexpr concatenate2 operator--(int)
+			requires std::bidirectional_iterator<iterator_category>
+		{
+			concatenate2 c(*this);
+			operator--();
+
+			return c;
+		}
+		// TODO: override all the increment operators
 	};
+	// TODO: int + concatenate2
+
 	template<iterable I>
 	constexpr auto concatenate(I i)
 	{
